@@ -14,8 +14,6 @@ type Coords struct {
 type Response struct {
 	CharacterResponse CharacterResponse
 	CooldownSchema    client.CooldownSchema
-	StatusCode        int
-	StatusText        string
 }
 
 // GetRemainingCooldown returns the remaining cooldown based upon the last action
@@ -43,8 +41,8 @@ type FightResponse struct {
 	FightResponse client.FightSchema
 }
 
-// GatherResponse wraps a generic Response with Skill related data
-type GatherResponse struct {
+// SkillResponse wraps a generic Response with Skill related data
+type SkillResponse struct {
 	Response
 	SkillInfo client.SkillInfoSchema
 }
