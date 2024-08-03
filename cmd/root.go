@@ -16,7 +16,8 @@ const (
 )
 
 var (
-	cfgFile string
+	cfgFile       string
+	characterName string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -49,6 +50,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.artifactsmmo-engine.yaml)")
+	rootCmd.PersistentFlags().StringVar(&characterName, "character", "", "The name of your character")
 	viper.BindPFlags(rootCmd.PersistentFlags())
 }
 
@@ -70,6 +72,7 @@ func initConfig() {
 
 	viper.SetEnvPrefix("mmo")
 	viper.BindEnv("token")
+	viper.BindEnv("character")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
