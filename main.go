@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"github.com/promiseofcake/artifactsmmo-engine/cmd"
 )
 
 func main() {
-	fmt.Println("Hello, ArtifactsMMO!")
+	cmd.Execute()
 }
