@@ -46,3 +46,14 @@ type SkillResponse struct {
 	Response
 	SkillInfo client.SkillInfoSchema
 }
+
+type MapContent []Location
+
+type Location struct {
+	Name string `json:"name"`
+	Skin string `json:"skin"`
+	X    int    `json:"x"`
+	Y    int    `json:"y"`
+	Code string `json:"code"`
+	Type string `json:"type"`
+}
