@@ -34,7 +34,6 @@ var fightCmd = &cobra.Command{
 				"cooldown", sec,
 			)
 			time.Sleep(time.Duration(sec) * time.Second)
-			return nil
 		}
 	},
 }
