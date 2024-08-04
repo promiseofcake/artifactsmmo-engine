@@ -30,7 +30,8 @@ func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (*Cha
 	return nil, fmt.Errorf("failed to find character: %s", character)
 }
 
-func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (MapContent, error) {
+// GetMaps fetches world state based upon a given content type
+func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (Locations, error) {
 	resp, err := r.Client.GetAllMapsMapsGetWithResponse(ctx, &client.GetAllMapsMapsGetParams{
 		ContentType: &contentType,
 	})
@@ -38,7 +39,11 @@ func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsG
 		return nil, fmt.Errorf("failed to fetch maps for content: %s %w", contentType, err)
 	}
 
-	var mc MapContent
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch maps for content: %s (%d)", resp.Body, resp.StatusCode())
+	}
+
+	var mc Locations
 	for _, m := range resp.JSON200.Data {
 		s, err := m.Content.AsMapContentSchema()
 		if err != nil {
@@ -57,4 +62,32 @@ func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsG
 		mc = append(mc, c)
 	}
 	return mc, nil
+}
+
+// GetMonsters fetches monster world state based upon a given content type
+func (r *Runner) GetMonsters(ctx context.Context, min, max int) (Monsters, error) {
+	resp, err := r.Client.GetAllMonstersMonstersGetWithResponse(ctx, &client.GetAllMonstersMonstersGetParams{
+		MinLevel: &min,
+		MaxLevel: &max,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch monsters for levels: %d-%d %w", min, max, err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch monsters: %s (%d)", resp.Body, resp.StatusCode())
+	}
+
+	var mm Monsters
+	for _, m := range resp.JSON200.Data {
+		monster := Monster{
+			Name:     m.Name,
+			Code:     m.Code,
+			Level:    m.Level,
+			Location: Location{},
+		}
+		mm = append(mm, monster)
+	}
+
+	return mm, nil
 }
