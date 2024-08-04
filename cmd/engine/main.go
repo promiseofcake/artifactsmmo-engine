@@ -62,7 +62,7 @@ func initViper(cfgFile string) error {
 	}
 
 	if err := viper.ReadInConfig(); err == nil {
-		slog.Info("using config file:", viper.ConfigFileUsed())
+		slog.Info("using config file:", "file", viper.ConfigFileUsed())
 	} else {
 		return err
 	}
