@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
-	"github.com/promiseofcake/artifactsmmo-engine/internal/engine"
-	flag "github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"log"
 	"log/slog"
 	"os"
+
+	flag "github.com/spf13/pflag"
+	"github.com/spf13/viper"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/engine"
 )
 
 func init() {
