@@ -2,6 +2,8 @@ module github.com/promiseofcake/artifactsmmo-engine
 
 go 1.22.5
 
+replace github.com/promiseofcake/artifactsmmo-go-client => ../artifactsmmo-go-client
+
 require (
 	github.com/promiseofcake/artifactsmmo-go-client v1.3.1
 	github.com/spf13/cobra v1.8.1
