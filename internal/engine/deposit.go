@@ -3,10 +3,13 @@ package engine
 import (
 	"context"
 	"fmt"
-	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
-	"github.com/promiseofcake/artifactsmmo-go-client/client"
 	"log/slog"
 	"time"
+
+	"github.com/promiseofcake/artifactsmmo-go-client/client"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/player"
 )
 
 func Deposit(ctx context.Context, r *actions.Runner, character string) error {
@@ -31,18 +34,23 @@ func Deposit(ctx context.Context, r *actions.Runner, character string) error {
 		return fmt.Errorf("failed to get character %w", err)
 	}
 
+	c := player.Character{
+		CharacterSchema: &char.CharacterSchema,
+	}
+
 	// goto bank if not there
-	if char.X != bankCoords.X && char.Y != bankCoords.Y {
+	if c.X != bankCoords.X && c.Y != bankCoords.Y {
 		m, err := r.Move(ctx, character, bankCoords.X, bankCoords.Y)
 		if err != nil {
 			return fmt.Errorf("failed to move %w", err)
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
 		slog.Info("moved to bank", "char", character, "cooldown", cooldown)
-		char = &m.CharacterResponse
+		c.CharacterSchema = &m.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	}
 
+	// we know the inventory once
 	// deposit all
 	for _, i := range *char.Inventory {
 		if i.Quantity > 0 && i.Code != "" {
@@ -52,7 +60,9 @@ func Deposit(ctx context.Context, r *actions.Runner, character string) error {
 			}
 			cooldown := time.Until(bankresp.CooldownSchema.Expiration)
 			slog.Info("deposited items into bank", "item", bankresp.Item, "cooldown", cooldown)
+			time.Sleep(cooldown)
 		}
+		slog.Info("skipping", "slot", i.Slot)
 	}
 
 	return nil

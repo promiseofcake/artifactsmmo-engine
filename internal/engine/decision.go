@@ -19,13 +19,13 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 	}
 
 	c := &player.Character{
-		CharacterSchema: char.CharacterSchema,
+		CharacterSchema: &char.CharacterSchema,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	currentIndex := 0
+	currentIndex := 1
 	for {
 		select {
 		case <-ctx.Done():

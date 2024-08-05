@@ -7,7 +7,7 @@ import (
 )
 
 type Character struct {
-	client.CharacterSchema
+	*client.CharacterSchema
 }
 
 func (p *Character) CountInventory() int {
@@ -21,7 +21,7 @@ func (p *Character) CountInventory() int {
 func (p *Character) ShouldBank() bool {
 	percentFull := float64(p.CountInventory()) / float64(p.InventoryMaxItems)
 	result := []any{"percent_full", percentFull}
-	if percentFull > 0.75 {
+	if percentFull > 0.7 {
 		slog.Info("Character should bank", result...)
 		return true
 	} else {

@@ -31,7 +31,7 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 			Y:    0,
 		},
 	}
-	resource := resources[rand.Intn(1)]
+	resource := resources[rand.Intn(2)]
 	slog.Info("we are gathering", "resource", resource)
 
 	// get all character info
@@ -42,7 +42,7 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 
 	// our mutated state
 	c := player.Character{
-		CharacterSchema: char.CharacterSchema,
+		CharacterSchema: &char.CharacterSchema,
 	}
 
 	// check if we should bank straight away
@@ -58,7 +58,7 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
 		slog.Info("moved to resource", "resource", resource, "cooldown", cooldown)
-		c.CharacterSchema = m.CharacterResponse.CharacterSchema
+		c.CharacterSchema = &m.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	}
 
@@ -74,7 +74,8 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 			}
 			cooldown := time.Until(g.CooldownSchema.Expiration)
 			slog.Info("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)
-			c.CharacterSchema = g.CharacterResponse.CharacterSchema
+			c.CharacterSchema = &g.CharacterResponse.CharacterSchema
+			time.Sleep(cooldown)
 
 			if c.ShouldBank() {
 				slog.Info("time to bank, too many resources")
