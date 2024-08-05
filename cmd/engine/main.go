@@ -36,16 +36,11 @@ func main() {
 
 	ctx := context.Background()
 	character := v.GetString("character")
-
-	err = engine.Fight(ctx, r, character)
+	
+	err = engine.BuildInventory(ctx, r, character)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	//err = engine.Deposit(ctx, r, character)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 }
 
 func initViper(cfgFile string) error {
