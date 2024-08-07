@@ -2,63 +2,64 @@ package engine
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"math/rand"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
-	"github.com/promiseofcake/artifactsmmo-engine/internal/player"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
+// Gather will attempt to Gather resources until the character should bank
 func Gather(ctx context.Context, r *actions.Runner, character string) error {
 	type Resource struct {
-		Code string
-		X    int
-		Y    int
+		Code   string
+		Coords models.Coords
 	}
 
-	// resources
+	// hardcoded resources
 	resources := []Resource{
 		{
 			Code: "ash_tree",
-			X:    -1,
-			Y:    0,
+			Coords: models.Coords{
+				X: -1,
+				Y: 0,
+			},
 		},
 		{
 			Code: "copper_rocks",
-			X:    2,
-			Y:    0,
+			Coords: models.Coords{
+				X: 2,
+				Y: 0,
+			},
 		},
 	}
 	resource := resources[rand.Intn(2)]
-	slog.Info("we are gathering", "resource", resource)
+	slog.Debug("choosing to gather", "resource", resource)
 
 	// get all character info
-	char, err := r.GetMyCharacterInfo(ctx, character)
+	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
-		return fmt.Errorf("failed to get character %w", err)
-	}
-
-	// our mutated state
-	c := player.Character{
-		CharacterSchema: &char.CharacterSchema,
+		slog.Error("failed to get character", "error", err)
+		return err
 	}
 
 	// check if we should bank straight away
 	if c.ShouldBank() {
+		slog.Debug("character will bank")
 		return nil
 	}
 
 	// go to resource
-	if c.X != resource.X && c.Y != resource.Y {
-		m, err := r.Move(ctx, c.Name, resource.X, resource.Y)
-		if err != nil {
-			return fmt.Errorf("failed to move %w", err)
+	if c.X != resource.Coords.X && c.Y != resource.Coords.Y {
+		m, mErr := r.Move(ctx, c.Name, resource.Coords.X, resource.Coords.Y)
+		if mErr != nil {
+			slog.Error("failed to move", "error", err)
+			return err
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
-		slog.Info("moved to resource", "resource", resource, "cooldown", cooldown)
-		c.CharacterSchema = &m.CharacterResponse.CharacterSchema
+		slog.Debug("moved to resource", "resource", resource, "cooldown", cooldown)
+		c.CharacterSchema = m.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	}
 
@@ -68,17 +69,18 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			g, err := r.Gather(ctx, character)
-			if err != nil {
-				return err
+			g, gErr := r.Gather(ctx, character)
+			if gErr != nil {
+				slog.Error("failed to gather", "error", gErr)
+				return gErr
 			}
 			cooldown := time.Until(g.CooldownSchema.Expiration)
-			slog.Info("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)
-			c.CharacterSchema = &g.CharacterResponse.CharacterSchema
+			slog.Debug("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)
+			c.CharacterSchema = g.CharacterResponse.CharacterSchema
 			time.Sleep(cooldown)
 
 			if c.ShouldBank() {
-				slog.Info("time to bank, too many resources")
+				slog.Debug("character will bank")
 				return nil
 			}
 		}
