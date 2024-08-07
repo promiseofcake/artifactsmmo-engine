@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"log/slog"
 	"time"
 
-	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/spf13/viper"
+
 	"github.com/spf13/cobra"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 )
 
 var fightCmd = &cobra.Command{
@@ -28,12 +30,12 @@ var fightCmd = &cobra.Command{
 				return fmt.Errorf("failed to fight: %w", err)
 			}
 
-			sec := resp.GetRemainingCooldown()
+			cooldown := resp.GetCooldownDuration()
 			slog.Info("fight results",
 				"results", resp.FightResponse,
-				"cooldown", sec,
+				"cooldown", cooldown,
 			)
-			time.Sleep(time.Duration(sec) * time.Second)
+			time.Sleep(cooldown)
 		}
 	},
 }

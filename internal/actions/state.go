@@ -3,13 +3,16 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.com/promiseofcake/artifactsmmo-go-client/client"
 	"log/slog"
 	"net/http"
+
+	"github.com/promiseofcake/artifactsmmo-go-client/client"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
 // GetMyCharacterInfo returns current info and status about your own specific character
-func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (*CharacterResponse, error) {
+func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (*models.Character, error) {
 	resp, err := r.Client.GetMyCharactersMyCharactersGetWithResponse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch characters: %w", err)
@@ -21,7 +24,7 @@ func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (*Cha
 
 	for _, c := range resp.JSON200.Data {
 		if c.Name == character {
-			return &CharacterResponse{
+			return &models.Character{
 				CharacterSchema: c,
 			}, nil
 		}

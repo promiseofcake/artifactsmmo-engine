@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"log/slog"
 	"time"
 
-	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/spf13/viper"
+
 	"github.com/spf13/cobra"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 )
 
 var (
@@ -32,11 +34,11 @@ var moveCmd = &cobra.Command{
 			return fmt.Errorf("failed to move: %w", err)
 		}
 
-		sec := resp.GetRemainingCooldown()
+		cooldown := resp.GetCooldownDuration()
 		slog.Info("move results",
-			"cooldown", sec,
+			"cooldown", cooldown,
 		)
-		time.Sleep(time.Duration(sec) * time.Second)
+		time.Sleep(cooldown)
 		return nil
 	},
 }

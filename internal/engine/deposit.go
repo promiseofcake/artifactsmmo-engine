@@ -9,7 +9,7 @@ import (
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
-	"github.com/promiseofcake/artifactsmmo-engine/internal/player"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
 func Deposit(ctx context.Context, r *actions.Runner, character string) error {
@@ -18,7 +18,7 @@ func Deposit(ctx context.Context, r *actions.Runner, character string) error {
 		return fmt.Errorf("failed to get maps %w", err)
 	}
 
-	bankCoords := actions.Coords{}
+	bankCoords := models.Coords{}
 	for _, m := range maps {
 		if m.Code == "bank" {
 			bankCoords.X = m.X
@@ -29,13 +29,9 @@ func Deposit(ctx context.Context, r *actions.Runner, character string) error {
 	slog.Info("bank found", "coords", bankCoords)
 
 	// get all character info
-	char, err := r.GetMyCharacterInfo(ctx, character)
+	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("failed to get character %w", err)
-	}
-
-	c := player.Character{
-		CharacterSchema: &char.CharacterSchema,
 	}
 
 	// goto bank if not there
@@ -46,13 +42,13 @@ func Deposit(ctx context.Context, r *actions.Runner, character string) error {
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
 		slog.Info("moved to bank", "char", character, "cooldown", cooldown)
-		c.CharacterSchema = &m.CharacterResponse.CharacterSchema
+		c.CharacterSchema = m.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	}
 
 	// we know the inventory once
 	// deposit all
-	for _, i := range *char.Inventory {
+	for _, i := range *c.Inventory {
 		if i.Quantity > 0 && i.Code != "" {
 			bankresp, err := r.Deposit(ctx, character, i.Code, i.Quantity)
 			if err != nil {

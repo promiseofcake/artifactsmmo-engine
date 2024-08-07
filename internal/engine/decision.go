@@ -6,20 +6,16 @@ import (
 	"log/slog"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
-	"github.com/promiseofcake/artifactsmmo-engine/internal/player"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
-type Operation func(ctx context.Context, r *actions.Runner, character *player.Character) bool
+type Operation func(ctx context.Context, r *actions.Runner, character *models.Character) bool
 
 func BuildInventory(ctx context.Context, r *actions.Runner, character string) error {
 	operations := []Operation{gather, bank}
-	char, err := r.GetMyCharacterInfo(ctx, character)
+	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("get character info: %w", err)
-	}
-
-	c := &player.Character{
-		CharacterSchema: &char.CharacterSchema,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -46,7 +42,7 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 	}
 }
 
-func gather(ctx context.Context, r *actions.Runner, character *player.Character) bool {
+func gather(ctx context.Context, r *actions.Runner, character *models.Character) bool {
 	for {
 		select {
 		case <-ctx.Done():
@@ -63,7 +59,7 @@ func gather(ctx context.Context, r *actions.Runner, character *player.Character)
 	}
 }
 
-func bank(ctx context.Context, r *actions.Runner, character *player.Character) bool {
+func bank(ctx context.Context, r *actions.Runner, character *models.Character) bool {
 	for {
 		select {
 		case <-ctx.Done():

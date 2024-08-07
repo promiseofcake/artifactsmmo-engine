@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"log/slog"
 	"time"
 
-	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/spf13/viper"
+
 	"github.com/spf13/cobra"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 )
 
 // gatherCmd represents the gather command
@@ -30,13 +32,13 @@ var gatherCmd = &cobra.Command{
 				return fmt.Errorf("failed to gather: %w", err)
 			}
 
-			sec := resp.GetRemainingCooldown()
+			cooldown := resp.GetCooldownDuration()
 			slog.Info("gather results",
 				"xp", resp.SkillInfo.Xp,
 				"items", resp.SkillInfo.Items,
-				"cooldown", sec,
+				"cooldown", cooldown,
 			)
-			time.Sleep(time.Duration(sec) * time.Second)
+			time.Sleep(cooldown)
 		}
 	},
 }

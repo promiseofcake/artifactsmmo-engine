@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
 // Runner is an executor for Actions
@@ -52,7 +54,7 @@ func (r *Runner) Craft(ctx context.Context, character string, code string, quant
 	return &SkillResponse{
 		SkillInfo: resp.JSON200.Data.Details,
 		Response: Response{
-			CharacterResponse: CharacterResponse{resp.JSON200.Data.Character},
+			CharacterResponse: models.Character{CharacterSchema: resp.JSON200.Data.Character},
 			CooldownSchema:    resp.JSON200.Data.Cooldown,
 		},
 	}, nil
@@ -73,7 +75,7 @@ func (r *Runner) Fight(ctx context.Context, character string) (*FightResponse, e
 	return &FightResponse{
 		FightResponse: resp.JSON200.Data.Fight,
 		Response: Response{
-			CharacterResponse: CharacterResponse{resp.JSON200.Data.Character},
+			CharacterResponse: models.Character{CharacterSchema: resp.JSON200.Data.Character},
 			CooldownSchema:    resp.JSON200.Data.Cooldown,
 		},
 	}, nil
@@ -94,7 +96,7 @@ func (r *Runner) Gather(ctx context.Context, character string) (*SkillResponse, 
 	return &SkillResponse{
 		SkillInfo: resp.JSON200.Data.Details,
 		Response: Response{
-			CharacterResponse: CharacterResponse{resp.JSON200.Data.Character},
+			CharacterResponse: models.Character{CharacterSchema: resp.JSON200.Data.Character},
 			CooldownSchema:    resp.JSON200.Data.Cooldown,
 		},
 	}, nil
@@ -115,7 +117,7 @@ func (r *Runner) Move(ctx context.Context, character string, x, y int) (*Respons
 	}
 
 	return &Response{
-		CharacterResponse: CharacterResponse{resp.JSON200.Data.Character},
+		CharacterResponse: models.Character{CharacterSchema: resp.JSON200.Data.Character},
 		CooldownSchema:    resp.JSON200.Data.Cooldown,
 	}, nil
 }
@@ -137,7 +139,7 @@ func (r *Runner) Deposit(ctx context.Context, character string, code string, qty
 		Item:      resp.JSON200.Data.Item,
 		BankItems: resp.JSON200.Data.Bank,
 		Response: Response{
-			CharacterResponse: CharacterResponse{resp.JSON200.Data.Character},
+			CharacterResponse: models.Character{CharacterSchema: resp.JSON200.Data.Character},
 			CooldownSchema:    resp.JSON200.Data.Cooldown,
 		},
 	}, nil
