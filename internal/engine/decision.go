@@ -9,7 +9,7 @@ import (
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
-type Operation func(ctx context.Context, r *actions.Runner, character *models.Character) bool
+type Operation func(ctx context.Context, r *actions.Runner, character models.Character) bool
 
 func BuildInventory(ctx context.Context, r *actions.Runner, character string) error {
 	operations := []Operation{gather, bank}
@@ -42,7 +42,7 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 	}
 }
 
-func gather(ctx context.Context, r *actions.Runner, character *models.Character) bool {
+func gather(ctx context.Context, r *actions.Runner, character models.Character) bool {
 	for {
 		select {
 		case <-ctx.Done():
@@ -59,7 +59,7 @@ func gather(ctx context.Context, r *actions.Runner, character *models.Character)
 	}
 }
 
-func bank(ctx context.Context, r *actions.Runner, character *models.Character) bool {
+func bank(ctx context.Context, r *actions.Runner, character models.Character) bool {
 	for {
 		select {
 		case <-ctx.Done():

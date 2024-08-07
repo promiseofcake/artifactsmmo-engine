@@ -12,11 +12,11 @@ import (
 func (r *Runner) Fight(ctx context.Context, character string) (*FightResponse, error) {
 	resp, err := r.Client.ActionFightMyNameActionFightPostWithResponse(ctx, character)
 	if err != nil {
-		return nil, fmt.Errorf("failed to attack: %w", err)
+		return nil, fmt.Errorf("failed to fight: %w", err)
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to attack: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("failed to fight: %s (%d)", resp.Body, resp.StatusCode())
 	}
 
 	return &FightResponse{

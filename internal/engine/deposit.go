@@ -20,9 +20,10 @@ func Deposit(ctx context.Context, r *actions.Runner, character string) error {
 
 	bankCoords := models.Coords{}
 	for _, m := range maps {
+
 		if m.Code == "bank" {
-			bankCoords.X = m.X
-			bankCoords.Y = m.Y
+			bankCoords.X = m.Coords.X
+			bankCoords.Y = m.Coords.Y
 			break
 		}
 	}

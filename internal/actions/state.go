@@ -3,7 +3,6 @@ package actions
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -12,29 +11,30 @@ import (
 )
 
 // GetMyCharacterInfo returns current info and status about your own specific character
-func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (*models.Character, error) {
+func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (models.Character, error) {
 	resp, err := r.Client.GetMyCharactersMyCharactersGetWithResponse(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch characters: %w", err)
+
+		return models.Character{}, fmt.Errorf("failed to get character info: %w", err)
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch characters: %s (%d)", resp.Body, resp.StatusCode())
+		return models.Character{}, fmt.Errorf("failed to get character info: %s (%d)", resp.Body, resp.StatusCode())
 	}
 
 	for _, c := range resp.JSON200.Data {
 		if c.Name == character {
-			return &models.Character{
+			return models.Character{
 				CharacterSchema: c,
 			}, nil
 		}
 	}
 
-	return nil, fmt.Errorf("failed to find character: %s", character)
+	return models.Character{}, fmt.Errorf("failed to find character: %s", character)
 }
 
 // GetMaps fetches world state based upon a given content type
-func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (Locations, error) {
+func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (models.Locations, error) {
 	resp, err := r.Client.GetAllMapsMapsGetWithResponse(ctx, &client.GetAllMapsMapsGetParams{
 		ContentType: &contentType,
 	})
@@ -46,29 +46,31 @@ func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsG
 		return nil, fmt.Errorf("failed to fetch maps for content: %s (%d)", resp.Body, resp.StatusCode())
 	}
 
-	var mc Locations
-	for _, m := range resp.JSON200.Data {
-		s, err := m.Content.AsMapContentSchema()
-		if err != nil {
-			slog.Error("failed to extract map content schema", "error", err)
+	var locs models.Locations
+	for _, l := range resp.JSON200.Data {
+		s, dataErr := l.Content.AsMapContentSchema()
+		if dataErr != nil {
+			return nil, fmt.Errorf("failed to extra map content schema: %w", err)
 		}
 
-		c := Location{
-			Name: m.Name,
-			Skin: m.Skin,
-			X:    m.X,
-			Y:    m.Y,
+		loc := models.Location{
+			Name: l.Name,
+			Skin: l.Skin,
+			Coords: models.Coords{
+				X: l.X,
+				Y: l.Y,
+			},
 			Code: s.Code,
 			Type: s.Type,
 		}
 
-		mc = append(mc, c)
+		locs = append(locs, loc)
 	}
-	return mc, nil
+	return locs, nil
 }
 
 // GetMonsters fetches monster world state based upon a given content type
-func (r *Runner) GetMonsters(ctx context.Context, min, max int) (Monsters, error) {
+func (r *Runner) GetMonsters(ctx context.Context, min, max int) (models.Monsters, error) {
 	resp, err := r.Client.GetAllMonstersMonstersGetWithResponse(ctx, &client.GetAllMonstersMonstersGetParams{
 		MinLevel: &min,
 		MaxLevel: &max,
@@ -81,16 +83,16 @@ func (r *Runner) GetMonsters(ctx context.Context, min, max int) (Monsters, error
 		return nil, fmt.Errorf("failed to fetch monsters: %s (%d)", resp.Body, resp.StatusCode())
 	}
 
-	var mm Monsters
+	var monsters models.Monsters
 	for _, m := range resp.JSON200.Data {
-		monster := Monster{
+		monster := models.Monster{
 			Name:     m.Name,
 			Code:     m.Code,
 			Level:    m.Level,
-			Location: Location{},
+			Location: models.Location{},
 		}
-		mm = append(mm, monster)
+		monsters = append(monsters, monster)
 	}
 
-	return mm, nil
+	return monsters, nil
 }

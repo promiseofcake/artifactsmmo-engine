@@ -34,5 +34,4 @@ func (r *Runner) Craft(ctx context.Context, character string, code string, quant
 			CooldownSchema:    resp.JSON200.Data.Cooldown,
 		},
 	}, nil
-
 }

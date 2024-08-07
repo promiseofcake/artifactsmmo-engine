@@ -3,11 +3,14 @@ package engine
 import (
 	"context"
 	"fmt"
-	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
-	"github.com/promiseofcake/artifactsmmo-go-client/client"
 	"log/slog"
 	"math"
 	"time"
+
+	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
+
+	"github.com/promiseofcake/artifactsmmo-go-client/client"
 )
 
 func Fight(ctx context.Context, r *actions.Runner, character string) error {
@@ -28,24 +31,24 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 		return fmt.Errorf("failed to get monster information %w", err)
 	}
 
-	loc := actions.LocationsToMap(monsterLocations)
-	mon := actions.MonstersToMap(monsterInfo)
+	loc := models.LocationsToMap(monsterLocations)
+	mon := models.MonstersToMap(monsterInfo)
 	mon.FindMonsters(loc)
 
-	var monster actions.Monster
+	var monster models.Monster
 	// pick a random monster
 	for _, m := range mon {
 		monster = *m
 		break
 	}
 
-	resp, err := r.Move(ctx, character, monster.Location.X, monster.Location.Y)
+	resp, err := r.Move(ctx, character, monster.GetCoords().X, monster.GetCoords().Y)
 	if err != nil {
 		return fmt.Errorf("failed to move to monster %w", err)
 	}
 	cooldown := time.Until(resp.CooldownSchema.Expiration)
 	slog.Info("moved to monster", "char", character, "cooldown", cooldown)
-	char = &resp.CharacterResponse
+	char = resp.CharacterResponse
 	time.Sleep(cooldown)
 
 	for {
@@ -58,7 +61,7 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 			"results", f.FightResponse,
 			"cooldown", cooldown,
 		)
-		char = &f.CharacterResponse
+		char = f.CharacterResponse
 		time.Sleep(cooldown)
 	}
 }
