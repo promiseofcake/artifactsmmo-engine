@@ -96,3 +96,33 @@ func (r *Runner) GetMonsters(ctx context.Context, min, max int) (models.Monsters
 
 	return monsters, nil
 }
+
+func (r *Runner) GetResources(ctx context.Context, skill string, min, max int) (models.Resources, error) {
+	s := client.GetAllResourcesResourcesGetParamsSkill(skill)
+
+	resp, err := r.Client.GetAllResourcesResourcesGetWithResponse(ctx, &client.GetAllResourcesResourcesGetParams{
+		MinLevel: &min,
+		MaxLevel: &max,
+		Skill:    &s,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch resources for skill %s, levels: %d-%d %w", skill, min, max, err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch resources: %s (%d)", resp.Body, resp.StatusCode())
+	}
+
+	var resources models.Resources
+	for _, res := range resp.JSON200.Data {
+		resource := models.Resource{
+			Name:     res.Name,
+			Code:     res.Code,
+			Skill:    res.Skill,
+			Level:    res.Level,
+			Location: models.Location{},
+		}
+		resources = append(resources, resource)
+	}
+
+	return resources, nil
+}

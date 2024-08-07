@@ -16,7 +16,11 @@ import (
 )
 
 func init() {
-	os.Setenv("TZ", "UTC")
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+	err := os.Setenv("TZ", "UTC")
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
@@ -39,14 +43,12 @@ func main() {
 	ctx := context.Background()
 	character := v.GetString("character")
 
-	// setup debug logging
-	slog.SetLogLoggerLevel(slog.LevelDebug)
-
 	err = blockInitialAction(ctx, r, character)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	slog.Info("starting BuildInventory engine")
 	err = engine.BuildInventory(ctx, r, character)
 	if err != nil {
 		log.Fatal(err)
@@ -85,7 +87,7 @@ func initViper(cfgFile string) error {
 	}
 
 	if err := viper.ReadInConfig(); err == nil {
-		slog.Info("using config file:", "file", viper.ConfigFileUsed())
+		slog.Debug("using config file:", "file", viper.ConfigFileUsed())
 	} else {
 		return err
 	}
