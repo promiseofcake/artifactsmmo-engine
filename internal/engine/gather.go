@@ -1,10 +1,14 @@
 package engine
 
 import (
+	"cmp"
 	"context"
+	"fmt"
 	"log/slog"
-	"math/rand"
+	"slices"
 	"time"
+
+	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
@@ -12,37 +16,45 @@ import (
 
 // Gather will attempt to Gather resources until the character should bank
 func Gather(ctx context.Context, r *actions.Runner, character string) error {
-	type Resource struct {
-		Code   string
-		Coords models.Coords
-	}
-
-	// hardcoded resources
-	resources := []Resource{
-		{
-			Code: "ash_tree",
-			Coords: models.Coords{
-				X: -1,
-				Y: 0,
-			},
-		},
-		{
-			Code: "copper_rocks",
-			Coords: models.Coords{
-				X: 2,
-				Y: 0,
-			},
-		},
-	}
-	resource := resources[rand.Intn(2)]
-	slog.Debug("choosing to gather", "resource", resource)
-
-	// get all character info
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		slog.Error("failed to get character", "error", err)
 		return err
 	}
+
+	resourceLoations, err := r.GetMaps(ctx, client.Resource)
+	if err != nil {
+		slog.Error("failed to get resource locations", "error", err)
+		return err
+	}
+
+	// it's in 10s, so we don't want to go lower than the band
+	minLevel := c.WoodcuttingLevel - 10
+	resourceInfo, err := r.GetResources(ctx, string(client.Woodcutting), minLevel, c.WoodcuttingLevel)
+	if err != nil {
+		slog.Error("failed to get resources", "error", err)
+		return err
+	}
+
+	loc := models.LocationsToMap(resourceLoations)
+	res := models.ResourcesToMap(resourceInfo)
+	// TODO there are more than one resource available, we should move to the one closet to the bank
+	res.FindResources(loc)
+
+	resources := res.ToSlice()
+	slices.SortFunc(resources, func(a, b models.Resource) int {
+		return cmp.Compare(b.Level, a.Level)
+	})
+
+	if len(resources) == 0 {
+		err = fmt.Errorf("no suitable resources found")
+		slog.Error("failed to gather", "error", err)
+		return err
+	}
+
+	// begin
+	resource := resources[0]
+	slog.Debug("choosing to gather", "resource", resource)
 
 	// check if we should bank straight away
 	if c.ShouldBank() {
@@ -51,8 +63,8 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	// go to resource
-	if c.X != resource.Coords.X && c.Y != resource.Coords.Y {
-		m, mErr := r.Move(ctx, c.Name, resource.Coords.X, resource.Coords.Y)
+	if c.X != resource.GetCoords().X && c.Y != resource.GetCoords().Y {
+		m, mErr := r.Move(ctx, c.Name, resource.GetCoords().X, resource.GetCoords().Y)
 		if mErr != nil {
 			slog.Error("failed to move", "error", err)
 			return err
@@ -63,7 +75,7 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 		time.Sleep(cooldown)
 	}
 
-	// mine resource until we should stop
+	// harvest resource until we should stop
 	for {
 		select {
 		case <-ctx.Done():

@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"math"
 	"time"
@@ -15,7 +14,7 @@ import (
 
 // Fight will attempt to find and fight appropriate monsters
 func Fight(ctx context.Context, r *actions.Runner, character string) error {
-	char, err := r.GetMyCharacterInfo(ctx, character)
+	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		slog.Error("failed to get character", "error", err)
 		return err
@@ -23,11 +22,12 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 
 	monsterLocations, err := r.GetMaps(ctx, client.Monster)
 	if err != nil {
-		return fmt.Errorf("failed to get monster locations %w", err)
+		slog.Error("failed to get monster locations", "error", err)
+		return err
 	}
 
-	minLevel := int(math.Round(math.Floor(float64(char.Level) - (float64(char.Level) * float64(.50)))))
-	maxLevel := int(math.Round(math.Ceil(float64(char.Level) + (float64(char.Level) * float64(.10)))))
+	minLevel := int(math.Round(math.Floor(float64(c.Level) - (float64(c.Level) * float64(.50)))))
+	maxLevel := int(math.Round(math.Ceil(float64(c.Level) + (float64(c.Level) * float64(.10)))))
 	monsterInfo, err := r.GetMonsters(ctx, minLevel, maxLevel)
 	if err != nil {
 		slog.Error("failed to get monsters", "error", err)
@@ -52,7 +52,7 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 	}
 	cooldown := time.Until(resp.CooldownSchema.Expiration)
 	slog.Debug("moved to monster", "char", character, "cooldown", cooldown)
-	char = resp.CharacterResponse
+	c = resp.CharacterResponse
 	time.Sleep(cooldown)
 
 	for {
@@ -66,7 +66,7 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 			"results", f.FightResponse,
 			"cooldown", fCooldown,
 		)
-		char = f.CharacterResponse
+		c = f.CharacterResponse
 		time.Sleep(fCooldown)
 	}
 }
