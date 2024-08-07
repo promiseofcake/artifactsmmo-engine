@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -12,37 +11,41 @@ import (
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
-func Deposit(ctx context.Context, r *actions.Runner, character string) error {
+// DepositAll is an engine operation which commands a character
+// to visit a bank and deposit all of their inventory
+func DepositAll(ctx context.Context, r *actions.Runner, character string) error {
 	maps, err := r.GetMaps(ctx, client.Bank)
 	if err != nil {
-		return fmt.Errorf("failed to get maps %w", err)
+		slog.Error("failed to get maps", "error", err)
+		return err
 	}
 
 	bankCoords := models.Coords{}
 	for _, m := range maps {
-
 		if m.Code == "bank" {
 			bankCoords.X = m.Coords.X
 			bankCoords.Y = m.Coords.Y
 			break
 		}
 	}
-	slog.Info("bank found", "coords", bankCoords)
+	slog.Debug("bank found", "coords", bankCoords)
 
 	// get all character info
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
-		return fmt.Errorf("failed to get character %w", err)
+		slog.Error("failed to get character", "error", err)
+		return err
 	}
 
 	// goto bank if not there
 	if c.X != bankCoords.X && c.Y != bankCoords.Y {
 		m, err := r.Move(ctx, character, bankCoords.X, bankCoords.Y)
 		if err != nil {
-			return fmt.Errorf("failed to move %w", err)
+			slog.Error("failed to move", "error", err)
+			return err
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
-		slog.Info("moved to bank", "char", character, "cooldown", cooldown)
+		slog.Debug("moved to bank", "char", character, "cooldown", cooldown)
 		c.CharacterSchema = m.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	}
@@ -53,14 +56,15 @@ func Deposit(ctx context.Context, r *actions.Runner, character string) error {
 		if i.Quantity > 0 && i.Code != "" {
 			bankresp, err := r.Deposit(ctx, character, i.Code, i.Quantity)
 			if err != nil {
-				return fmt.Errorf("failed to deposit %w", err)
+				slog.Error("failed to get deposit", "error", err)
+				return err
 			}
 			cooldown := time.Until(bankresp.CooldownSchema.Expiration)
-			slog.Info("deposited items into bank", "item", bankresp.Item, "cooldown", cooldown)
+			slog.Debug("deposited item(s) into bank", "item", bankresp.Item, "qty", i.Quantity, "cooldown", cooldown)
 			time.Sleep(cooldown)
 		}
-		slog.Info("skipping", "slot", i.Slot)
 	}
+	slog.Debug("deposit finished")
 
 	return nil
 }
