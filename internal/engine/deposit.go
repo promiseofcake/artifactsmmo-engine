@@ -37,12 +37,12 @@ func DepositAll(ctx context.Context, r *actions.Runner, character string) error 
 		return err
 	}
 
-	// goto bank if not there
+	// navigate to bank if not already there
 	if c.X != bankCoords.X && c.Y != bankCoords.Y {
-		m, err := r.Move(ctx, character, bankCoords.X, bankCoords.Y)
-		if err != nil {
-			slog.Error("failed to move", "error", err)
-			return err
+		m, mErr := r.Move(ctx, character, bankCoords.X, bankCoords.Y)
+		if mErr != nil {
+			slog.Error("failed to move", "error", mErr)
+			return mErr
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
 		slog.Debug("moved to bank", "char", character, "cooldown", cooldown)
@@ -50,17 +50,16 @@ func DepositAll(ctx context.Context, r *actions.Runner, character string) error 
 		time.Sleep(cooldown)
 	}
 
-	// we know the inventory once
-	// deposit all
+	// loop over the inventory and deposit all
 	for _, i := range *c.Inventory {
 		if i.Quantity > 0 && i.Code != "" {
-			bankresp, err := r.Deposit(ctx, character, i.Code, i.Quantity)
-			if err != nil {
-				slog.Error("failed to get deposit", "error", err)
-				return err
+			b, bErr := r.Deposit(ctx, character, i.Code, i.Quantity)
+			if bErr != nil {
+				slog.Error("failed to deposit", "error", bErr)
+				return bErr
 			}
-			cooldown := time.Until(bankresp.CooldownSchema.Expiration)
-			slog.Debug("deposited item(s) into bank", "item", bankresp.Item, "qty", i.Quantity, "cooldown", cooldown)
+			cooldown := time.Until(b.CooldownSchema.Expiration)
+			slog.Debug("deposited item into bank", "item", b.Item, "qty", i.Quantity, "cooldown", cooldown)
 			time.Sleep(cooldown)
 		}
 	}

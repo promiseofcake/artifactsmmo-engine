@@ -29,7 +29,7 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Debug("Operation loop canceled.")
+			slog.Debug("operation loop canceled.")
 			return nil
 		default:
 			currentIndex = (currentIndex + 1) % len(operations)

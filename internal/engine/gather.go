@@ -10,6 +10,7 @@ import (
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
+// Gather will attempt to Gather resources until the character should bank
 func Gather(ctx context.Context, r *actions.Runner, character string) error {
 	type Resource struct {
 		Code   string
@@ -51,9 +52,9 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 
 	// go to resource
 	if c.X != resource.Coords.X && c.Y != resource.Coords.Y {
-		m, err := r.Move(ctx, c.Name, resource.Coords.X, resource.Coords.Y)
-		if err != nil {
-			slog.Error("failed to get move", "error", err)
+		m, mErr := r.Move(ctx, c.Name, resource.Coords.X, resource.Coords.Y)
+		if mErr != nil {
+			slog.Error("failed to move", "error", err)
 			return err
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
@@ -68,9 +69,10 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			g, err := r.Gather(ctx, character)
-			if err != nil {
-				return err
+			g, gErr := r.Gather(ctx, character)
+			if gErr != nil {
+				slog.Error("failed to gather", "error", gErr)
+				return gErr
 			}
 			cooldown := time.Until(g.CooldownSchema.Expiration)
 			slog.Debug("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)

@@ -13,6 +13,7 @@ import (
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 )
 
+// Fight will attempt to find and fight appropriate monsters
 func Fight(ctx context.Context, r *actions.Runner, character string) error {
 	char, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
@@ -55,17 +56,17 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 	time.Sleep(cooldown)
 
 	for {
-		f, err := r.Fight(ctx, character)
-		if err != nil {
-			slog.Error("failed to fight monster", "error", err)
-			return err
+		f, fErr := r.Fight(ctx, character)
+		if fErr != nil {
+			slog.Error("failed to fight monster", "error", fErr)
+			return fErr
 		}
-		cooldown := time.Until(f.CooldownSchema.Expiration)
+		fCooldown := time.Until(f.CooldownSchema.Expiration)
 		slog.Debug("fight results",
 			"results", f.FightResponse,
-			"cooldown", cooldown,
+			"cooldown", fCooldown,
 		)
 		char = f.CharacterResponse
-		time.Sleep(cooldown)
+		time.Sleep(fCooldown)
 	}
 }
