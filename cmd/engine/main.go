@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
+	"time"
 
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -36,11 +38,37 @@ func main() {
 
 	ctx := context.Background()
 	character := v.GetString("character")
-	
+
+	// setup debug logging
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
+	err = blockInitialAction(ctx, r, character)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	err = engine.BuildInventory(ctx, r, character)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func blockInitialAction(ctx context.Context, r *actions.Runner, character string) error {
+	c, err := r.GetMyCharacterInfo(ctx, character)
+	if err != nil {
+		return fmt.Errorf("failed to get character: %w", err)
+	}
+
+	d, err := c.GetCooldownDuration()
+	if err != nil {
+		return fmt.Errorf("failed to get cooldown: %w", err)
+	}
+
+	if d > 0 {
+		slog.Info("character on cooldown waiting...", "duration", d)
+		time.Sleep(d)
+	}
+	return nil
 }
 
 func initViper(cfgFile string) error {
