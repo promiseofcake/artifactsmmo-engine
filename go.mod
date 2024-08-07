@@ -3,7 +3,7 @@ module github.com/promiseofcake/artifactsmmo-engine
 go 1.22.5
 
 require (
-	github.com/promiseofcake/artifactsmmo-go-client v1.3.4
+	github.com/promiseofcake/artifactsmmo-go-client v1.5.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
