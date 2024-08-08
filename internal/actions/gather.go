@@ -14,9 +14,8 @@ func (r *Runner) Gather(ctx context.Context, character string) (*SkillResponse, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to gather: %w", err)
 	}
-
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to gather: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
 	}
 
 	return &SkillResponse{

@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
@@ -22,6 +23,10 @@ func (r *Runner) Deposit(ctx context.Context, character string, code string, qty
 	if err != nil {
 		return nil, fmt.Errorf("failed to deposit: %w", err)
 	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
+	}
+
 	return &BankResponse{
 		Item:      resp.JSON200.Data.Item,
 		BankItems: resp.JSON200.Data.Bank,

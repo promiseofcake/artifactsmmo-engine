@@ -19,9 +19,8 @@ func (r *Runner) Move(ctx context.Context, character string, x, y int) (*Respons
 	if err != nil {
 		return nil, fmt.Errorf("failed to move: %w", err)
 	}
-
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to move: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
 	}
 
 	return &Response{

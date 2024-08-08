@@ -78,9 +78,8 @@ func (r *Runner) GetMonsters(ctx context.Context, min, max int) (models.Monsters
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch monsters for levels: %d-%d %w", min, max, err)
 	}
-
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch monsters: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
 	}
 
 	var monsters models.Monsters
@@ -117,7 +116,7 @@ func (r *Runner) GetResources(ctx context.Context, skill client.ResourceSchemaSk
 		return nil, fmt.Errorf("failed to fetch resources for skill %s, levels: %d-%d %w", skill, min, max, err)
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch resources: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
 	}
 
 	var resources models.Resources

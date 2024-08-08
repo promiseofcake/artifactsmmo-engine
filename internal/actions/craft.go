@@ -22,9 +22,8 @@ func (r *Runner) Craft(ctx context.Context, character string, code string, quant
 	if err != nil {
 		return nil, fmt.Errorf("failed to craft %s (%d): %w", code, quantity, err)
 	}
-
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to craft: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
 	}
 
 	return &SkillResponse{
