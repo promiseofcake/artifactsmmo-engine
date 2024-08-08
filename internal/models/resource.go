@@ -28,11 +28,11 @@ func resourcePK(resource Resource) string {
 }
 
 func ResourcesToMap(resources Resources) ResourceMap {
-	monsterMap := make(ResourceMap)
-	for _, m := range resources {
-		monsterMap[resourcePK(m)] = &m
+	resourceMap := make(ResourceMap)
+	for _, r := range resources {
+		resourceMap[resourcePK(r)] = &r
 	}
-	return monsterMap
+	return resourceMap
 }
 
 func (r ResourceMap) FindResources(l LocationMap) {
