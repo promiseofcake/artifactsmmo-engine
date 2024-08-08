@@ -63,7 +63,7 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	// go to resource
-	if c.X != resource.GetCoords().X && c.Y != resource.GetCoords().Y {
+	if c.X != resource.GetCoords().X || c.Y != resource.GetCoords().Y {
 		m, mErr := r.Move(ctx, c.Name, resource.GetCoords().X, resource.GetCoords().Y)
 		if mErr != nil {
 			slog.Error("failed to move", "error", err)
