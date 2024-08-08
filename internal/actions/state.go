@@ -97,7 +97,15 @@ func (r *Runner) GetMonsters(ctx context.Context, min, max int) (models.Monsters
 	return monsters, nil
 }
 
-func (r *Runner) GetResources(ctx context.Context, skill string, min, max int) (models.Resources, error) {
+func (r *Runner) GetResources(ctx context.Context, skill client.ResourceSchemaSkill, min, max int) (models.Resources, error) {
+	if min < 0 {
+		min = 0
+	}
+
+	if max < 0 {
+		max = 0
+	}
+
 	s := client.GetAllResourcesResourcesGetParamsSkill(skill)
 
 	resp, err := r.Client.GetAllResourcesResourcesGetWithResponse(ctx, &client.GetAllResourcesResourcesGetParams{

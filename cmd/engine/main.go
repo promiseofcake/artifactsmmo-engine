@@ -23,12 +23,25 @@ func init() {
 	}
 }
 
+const (
+	configFlag    = "config"
+	tokenFlag     = "token"
+	characterFlag = "character"
+)
+
 func main() {
 	slog.Info("starting artifacts-mmo game engine")
-	var config = flag.String("config", "", "path to config file")
+	config := flag.String(configFlag, "", "path to config file")
+	_ = flag.String(tokenFlag, "", "API token")
+	_ = flag.String(characterFlag, "", "character name")
 	flag.Parse()
 
 	err := initViper(*config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = bindFlags([]string{configFlag, tokenFlag, characterFlag})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,18 +54,28 @@ func main() {
 	}
 
 	ctx := context.Background()
-	character := v.GetString("character")
+	c := v.GetString(characterFlag)
 
-	err = blockInitialAction(ctx, r, character)
+	err = blockInitialAction(ctx, r, c)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	slog.Info("starting BuildInventory engine")
-	err = engine.BuildInventory(ctx, r, character)
+	err = engine.BuildInventory(ctx, r, c)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func bindFlags(flags []string) error {
+	for _, f := range flags {
+		err := viper.BindPFlag(f, flag.Lookup(f))
+		if err != nil {
+			return fmt.Errorf("failed to bind flag: %w", err)
+		}
+	}
+	return nil
 }
 
 func blockInitialAction(ctx context.Context, r *actions.Runner, character string) error {
