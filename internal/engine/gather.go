@@ -28,9 +28,8 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 		return err
 	}
 
-	// it's in 10s, so we don't want to go lower than the band
-	minLevel := c.WoodcuttingLevel - 10
-	resourceInfo, err := r.GetResources(ctx, string(client.Woodcutting), minLevel, c.WoodcuttingLevel)
+	skill := c.ChooseWeakestSkill()
+	resourceInfo, err := r.GetResources(ctx, skill.Code, skill.MinLevel, skill.CurrentLevel)
 	if err != nil {
 		slog.Error("failed to get resources", "error", err)
 		return err
@@ -39,6 +38,7 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 	loc := models.LocationsToMap(resourceLoations)
 	res := models.ResourcesToMap(resourceInfo)
 	// TODO there are more than one resource available, we should move to the one closet to the bank
+	// implement with manhattan distance
 	res.FindResources(loc)
 
 	resources := res.ToSlice()

@@ -22,7 +22,7 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 		return fmt.Errorf("get character info: %w", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	currentIndex := 1
