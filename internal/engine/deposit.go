@@ -38,7 +38,7 @@ func DepositAll(ctx context.Context, r *actions.Runner, character string) error 
 	}
 
 	// navigate to bank if not already there
-	if c.X != bankCoords.X && c.Y != bankCoords.Y {
+	if c.X != bankCoords.X || c.Y != bankCoords.Y {
 		m, mErr := r.Move(ctx, character, bankCoords.X, bankCoords.Y)
 		if mErr != nil {
 			slog.Error("failed to move", "error", mErr)

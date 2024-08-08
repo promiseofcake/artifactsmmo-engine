@@ -2,7 +2,6 @@ package models
 
 import (
 	"cmp"
-	"fmt"
 	"log/slog"
 	"slices"
 	"time"
@@ -62,12 +61,8 @@ func (c Character) ChooseWeakestSkill() CharacterSkill {
 
 // GetCooldownDuration returns the time.Duration remaining on the character for cooldown
 func (c Character) GetCooldownDuration() (time.Duration, error) {
-	t, err := c.CooldownExpiration.AsCharacterSchemaCooldownExpiration0()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get cooldown expiration: %w", err)
-	}
-
-	return time.Until(t), nil
+	t := c.CooldownExpiration
+	return time.Until(*t), nil
 }
 
 // GetPosition returns the given Coordinates for the Character in question
