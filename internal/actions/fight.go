@@ -14,9 +14,8 @@ func (r *Runner) Fight(ctx context.Context, character string) (*FightResponse, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to fight: %w", err)
 	}
-
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to fight: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
 	}
 
 	return &FightResponse{

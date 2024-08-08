@@ -12,15 +12,13 @@ import (
 
 // Deposit deposits an item and quantity into the bank
 func (r *Runner) Deposit(ctx context.Context, character string, code string, qty int) (*BankResponse, error) {
-	body := client.ActionDepositBankMyNameActionBankDepositPostJSONRequestBody{
-		Code:     code,
-		Quantity: qty,
-	}
-
 	resp, err := r.Client.ActionDepositBankMyNameActionBankDepositPostWithResponse(
 		ctx,
 		character,
-		body,
+		client.ActionDepositBankMyNameActionBankDepositPostJSONRequestBody{
+			Code:     code,
+			Quantity: qty,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deposit: %w", err)
