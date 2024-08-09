@@ -1,10 +1,9 @@
 package actions
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 )
 
@@ -15,10 +14,12 @@ type Runner struct {
 
 // NewDefaultRunner returns a new Actions command runner with a default client
 func NewDefaultRunner(token string) (*Runner, error) {
-	c, err := client.NewClientWithResponses("https://api.artifactsmmo.com", client.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
-		req.Header.Set("Authorization", "Bearer "+token)
-		return nil
-	}))
+	rClient := retryablehttp.NewClient()
+	c, err := client.NewClientWithResponses(
+		"https://api.artifactsmmo.com",
+		client.WithRequestEditorFn(client.NewBearerAuthorizationRequestFunc(token)),
+		client.WithHTTPClient(rClient.HTTPClient),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init new client: %w", err)
 	}
