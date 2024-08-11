@@ -6,8 +6,10 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
+	"github.com/lmittmann/tint"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
@@ -24,29 +26,24 @@ func init() {
 }
 
 const (
-	configFlag    = "config"
-	tokenFlag     = "token"
-	characterFlag = "character"
+	configFlag     = "config"
+	tokenFlag      = "token"
+	logLevelFlag   = "log_level"
+	charactersFlag = "characters"
 )
 
 func main() {
+	v := initializeFlags()
+
+	w := os.Stdout
+	slog.SetDefault(slog.New(
+		tint.NewHandler(w, &tint.Options{
+			Level:      slog.Level(viper.GetInt(logLevelFlag)),
+			TimeFormat: time.Kitchen,
+		}),
+	))
+
 	slog.Info("starting artifacts-mmo game engine")
-	config := flag.String(configFlag, "", "path to config file")
-	_ = flag.String(tokenFlag, "", "API token")
-	_ = flag.String(characterFlag, "", "character name")
-	flag.Parse()
-
-	err := initViper(*config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = bindFlags([]string{configFlag, tokenFlag, characterFlag})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	v := viper.GetViper()
 
 	r, err := actions.NewDefaultRunner(v.GetString("token"))
 	if err != nil {
@@ -54,18 +51,47 @@ func main() {
 	}
 
 	ctx := context.Background()
-	c := v.GetString(characterFlag)
+	characters := v.GetStringSlice(charactersFlag)
 
-	err = blockInitialAction(ctx, r, c)
+	wg := &sync.WaitGroup{}
+	for _, c := range characters {
+		wg.Add(1)
+		slog.Info("starting BuildInventory engine", "character", c)
+		go func(ctx context.Context) {
+			defer wg.Done()
+			err = blockInitialAction(ctx, r, c)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = engine.BuildInventory(ctx, r, c)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(ctx)
+	}
+
+	slog.Info("waiting for processes to complete")
+	wg.Wait()
+}
+
+func initializeFlags() *viper.Viper {
+	config := flag.String(configFlag, "", "path to config file")
+	_ = flag.String(tokenFlag, "", "API token")
+	_ = flag.StringSlice(charactersFlag, []string{}, "list of characters")
+	_ = flag.Int(logLevelFlag, int(slog.LevelInfo), "log level")
+	flag.Parse()
+
+	err := initViper(*config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	slog.Info("starting BuildInventory engine")
-	err = engine.BuildInventory(ctx, r, c)
+	err = bindFlags([]string{configFlag, logLevelFlag, tokenFlag, charactersFlag})
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return viper.GetViper()
 }
 
 func bindFlags(flags []string) error {

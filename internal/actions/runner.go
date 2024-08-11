@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -12,9 +13,33 @@ type Runner struct {
 	Client *client.ClientWithResponses
 }
 
+type retryLogger struct {
+	*slog.Logger
+}
+
+func newRetryLogger() *retryLogger {
+	return &retryLogger{
+		slog.Default(),
+	}
+}
+
+func (h *retryLogger) Error(msg string, keysAndValues ...interface{}) {
+	h.Logger.Error(msg, keysAndValues...)
+}
+func (h *retryLogger) Info(msg string, keysAndValues ...interface{}) {
+	h.Logger.Info(msg, keysAndValues...)
+}
+func (h *retryLogger) Debug(msg string, keysAndValues ...interface{}) {
+	h.Logger.Debug(msg, keysAndValues...)
+}
+func (h *retryLogger) Warn(msg string, keysAndValues ...interface{}) {
+	h.Logger.Warn(msg, keysAndValues...)
+}
+
 // NewDefaultRunner returns a new Actions command runner with a default client
 func NewDefaultRunner(token string) (*Runner, error) {
 	rClient := retryablehttp.NewClient()
+	rClient.Logger = newRetryLogger()
 	c, err := client.NewClientWithResponses(
 		"https://api.artifactsmmo.com",
 		client.WithRequestEditorFn(client.NewBearerAuthorizationRequestFunc(token)),
