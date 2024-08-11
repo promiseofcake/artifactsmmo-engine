@@ -18,7 +18,7 @@ func NewDefaultRunner(token string) (*Runner, error) {
 	c, err := client.NewClientWithResponses(
 		"https://api.artifactsmmo.com",
 		client.WithRequestEditorFn(client.NewBearerAuthorizationRequestFunc(token)),
-		client.WithHTTPClient(rClient.HTTPClient),
+		client.WithHTTPClient(rClient.StandardClient()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init new client: %w", err)
