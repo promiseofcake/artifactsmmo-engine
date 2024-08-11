@@ -87,7 +87,7 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 				return gErr
 			}
 			cooldown := time.Until(g.CooldownSchema.Expiration)
-			slog.Debug("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)
+			slog.Info("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)
 			c.CharacterSchema = g.CharacterResponse.CharacterSchema
 			time.Sleep(cooldown)
 

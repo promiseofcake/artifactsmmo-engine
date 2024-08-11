@@ -59,7 +59,7 @@ func DepositAll(ctx context.Context, r *actions.Runner, character string) error 
 				return bErr
 			}
 			cooldown := time.Until(b.CooldownSchema.Expiration)
-			slog.Debug("deposited item into bank", "item", b.Item, "qty", i.Quantity, "cooldown", cooldown)
+			slog.Info("deposited item into bank", "item", b.Item, "qty", i.Quantity, "cooldown", cooldown)
 			time.Sleep(cooldown)
 		}
 	}
