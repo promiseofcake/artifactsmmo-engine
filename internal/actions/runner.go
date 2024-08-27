@@ -1,8 +1,10 @@
 package actions
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -40,6 +42,18 @@ func (h *retryLogger) Warn(msg string, keysAndValues ...interface{}) {
 func NewDefaultRunner(token string) (*Runner, error) {
 	rClient := retryablehttp.NewClient()
 	rClient.Logger = newRetryLogger()
+
+	// setup retries for contention
+	rClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		switch resp.StatusCode {
+		case 461, 486, 499:
+			return true, nil
+		default:
+			return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+		}
+	}
+
+	rClient.CheckRetry = retryablehttp.DefaultRetryPolicy
 	c, err := client.NewClientWithResponses(
 		"https://api.artifactsmmo.com",
 		client.WithRequestEditorFn(client.NewBearerAuthorizationRequestFunc(token)),
