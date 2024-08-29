@@ -26,7 +26,7 @@ func Move(ctx context.Context, r *actions.Runner, character string, coords model
 			return fmt.Errorf("failed to move: %w", mErr)
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
-		slog.Debug("moved to location", "coords", "char", character, "cooldown", cooldown)
+		slog.Debug("moved to location", "coords", coords, "char", character, "cooldown", cooldown)
 		c.CharacterSchema = m.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	} else {
