@@ -62,17 +62,10 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 		return nil
 	}
 
-	// go to resource
-	if c.X != resource.GetCoords().X || c.Y != resource.GetCoords().Y {
-		m, mErr := r.Move(ctx, c.Name, resource.GetCoords().X, resource.GetCoords().Y)
-		if mErr != nil {
-			slog.Error("failed to move", "error", err)
-			return err
-		}
-		cooldown := time.Until(m.CooldownSchema.Expiration)
-		slog.Debug("moved to resource", "resource", resource, "cooldown", cooldown)
-		c.CharacterSchema = m.CharacterResponse.CharacterSchema
-		time.Sleep(cooldown)
+	mErr := Move(ctx, r, character, resource.GetCoords())
+	if mErr != nil {
+		slog.Error("failed to move", "error", err)
+		return err
 	}
 
 	// harvest resource until we should stop
