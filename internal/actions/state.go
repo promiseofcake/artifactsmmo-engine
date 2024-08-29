@@ -10,11 +10,33 @@ import (
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
+// GetBankItems returns all items in the bank
+func (r *Runner) GetBankItems(ctx context.Context) (models.BankItems, error) {
+	resp, err := r.Client.GetBankItemsMyBankItemsGetWithResponse(ctx, &client.GetBankItemsMyBankItemsGetParams{})
+	if err != nil {
+		return models.BankItems{}, fmt.Errorf("failed to get bank items: %w", err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return models.BankItems{}, fmt.Errorf("failed to get bank items: %s (%d)", resp.Body, resp.StatusCode())
+	}
+
+	var bank models.BankItems
+	for _, i := range resp.JSON200.Data {
+		item := models.BankItem{
+			Code:     i.Code,
+			Quantity: i.Quantity,
+		}
+		bank = append(bank, item)
+	}
+
+	return bank, nil
+}
+
 // GetMyCharacterInfo returns current info and status about your own specific character
 func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (models.Character, error) {
 	resp, err := r.Client.GetMyCharactersMyCharactersGetWithResponse(ctx)
 	if err != nil {
-
 		return models.Character{}, fmt.Errorf("failed to get character info: %w", err)
 	}
 
@@ -43,7 +65,7 @@ func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsG
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch maps for content: %s (%d)", resp.Body, resp.StatusCode())
+		return nil, fmt.Errorf("failed to fetch maps: %s (%d)", resp.Body, resp.StatusCode())
 	}
 
 	var locs models.Locations
@@ -67,6 +89,45 @@ func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsG
 		locs = append(locs, loc)
 	}
 	return locs, nil
+}
+
+// GetItem returns information about an item
+func (r *Runner) GetItem(ctx context.Context, code string) (models.Item, error) {
+	resp, err := r.Client.GetItemItemsCodeGetWithResponse(ctx, code)
+	if err != nil {
+		return models.Item{}, fmt.Errorf("failed to get item with code: %s %w", code, err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return models.Item{}, fmt.Errorf("failed to get item: %s (%d)", resp.Body, resp.StatusCode())
+	}
+
+	return models.Item{ItemSchema: resp.JSON200.Data.Item}, nil
+}
+
+// GetItems searches for an item
+func (r *Runner) GetItems(ctx context.Context, min, max int, skill string, material string) (models.Items, error) {
+	s := client.GetAllItemsItemsGetParamsCraftSkill(skill)
+
+	resp, err := r.Client.GetAllItemsItemsGetWithResponse(ctx, &client.GetAllItemsItemsGetParams{
+		CraftSkill:    &s,
+		CraftMaterial: &material,
+		MinLevel:      &min,
+		MaxLevel:      &max,
+	})
+	if err != nil {
+		return models.Items{}, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return models.Items{}, err
+	}
+
+	for _, i := range resp.JSON200.Data {
+		i.Craft.AsCraftSchema()
+	}
+
+	return models.Items{}, nil
 }
 
 // GetMonsters fetches monster world state based upon a given content type

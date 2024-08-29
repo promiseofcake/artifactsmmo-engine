@@ -47,6 +47,23 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 }
 
 // Operation loops
+func bank(ctx context.Context, r *actions.Runner, character models.Character) bool {
+	for {
+		select {
+		case <-ctx.Done():
+			slog.Debug("banking context closed")
+			return true
+		default:
+			slog.Debug("banking")
+			err := DepositAll(ctx, r, character.Name)
+			if err != nil {
+				panic(err)
+			}
+			slog.Debug("banking done")
+			return true
+		}
+	}
+}
 
 func gather(ctx context.Context, r *actions.Runner, character models.Character) bool {
 	for {
@@ -66,19 +83,19 @@ func gather(ctx context.Context, r *actions.Runner, character models.Character) 
 	}
 }
 
-func bank(ctx context.Context, r *actions.Runner, character models.Character) bool {
+func refine(ctx context.Context, r *actions.Runner, character models.Character) bool {
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Debug("banking context closed")
+			slog.Debug("refine context closed")
 			return true
 		default:
-			slog.Debug("banking")
-			err := DepositAll(ctx, r, character.Name)
+			slog.Debug("refining")
+			err := Refine(ctx, r, character.Name)
 			if err != nil {
 				panic(err)
 			}
-			slog.Debug("banking done")
+			slog.Debug("refining done")
 			return true
 		}
 	}

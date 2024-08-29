@@ -45,15 +45,11 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 		break
 	}
 
-	resp, err := r.Move(ctx, character, monster.GetCoords().X, monster.GetCoords().Y)
+	err = Move(ctx, r, character, monster.GetCoords())
 	if err != nil {
 		slog.Error("failed to move to monster", "error", err)
 		return err
 	}
-	cooldown := time.Until(resp.CooldownSchema.Expiration)
-	slog.Debug("moved to monster", "char", character, "cooldown", cooldown)
-	c = resp.CharacterResponse
-	time.Sleep(cooldown)
 
 	for {
 		f, fErr := r.Fight(ctx, character)
