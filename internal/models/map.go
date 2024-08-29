@@ -9,7 +9,7 @@ type Coords struct {
 }
 
 // CalculateDistance determines the number of moves (distance) to get
-// from one Coords to a second Coords using the Manhattan distance forumla
+// from one Coords to a second Coords using the Manhattan distance formula
 func CalculateDistance(one, two Coords) int {
 	return int(math.Abs(float64(one.X-two.X)) + math.Abs(float64(one.Y-two.Y)))
 }
