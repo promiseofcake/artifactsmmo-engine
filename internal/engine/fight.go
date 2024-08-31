@@ -2,11 +2,11 @@ package engine
 
 import (
 	"context"
-	"log/slog"
 	"math"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -14,15 +14,16 @@ import (
 
 // Fight will attempt to find and fight appropriate monsters
 func Fight(ctx context.Context, r *actions.Runner, character string) error {
+	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
-		slog.Error("failed to get character", "error", err)
+		l.Error("failed to get character", "error", err)
 		return err
 	}
 
 	monsterLocations, err := r.GetMaps(ctx, client.Monster)
 	if err != nil {
-		slog.Error("failed to get monster locations", "error", err)
+		l.Error("failed to get monster locations", "error", err)
 		return err
 	}
 
@@ -30,7 +31,7 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 	maxLevel := int(math.Round(math.Ceil(float64(c.Level) + (float64(c.Level) * float64(.10)))))
 	monsterInfo, err := r.GetMonsters(ctx, minLevel, maxLevel)
 	if err != nil {
-		slog.Error("failed to get monsters", "error", err)
+		l.Error("failed to get monsters", "error", err)
 		return err
 	}
 
@@ -45,24 +46,20 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 		break
 	}
 
-	resp, err := r.Move(ctx, character, monster.GetCoords().X, monster.GetCoords().Y)
+	err = Move(ctx, r, character, monster.GetCoords())
 	if err != nil {
-		slog.Error("failed to move to monster", "error", err)
+		l.Error("failed to move to monster", "error", err)
 		return err
 	}
-	cooldown := time.Until(resp.CooldownSchema.Expiration)
-	slog.Debug("moved to monster", "char", character, "cooldown", cooldown)
-	c = resp.CharacterResponse
-	time.Sleep(cooldown)
 
 	for {
 		f, fErr := r.Fight(ctx, character)
 		if fErr != nil {
-			slog.Error("failed to fight monster", "error", fErr)
+			l.Error("failed to fight monster", "error", fErr)
 			return fErr
 		}
 		fCooldown := time.Until(f.CooldownSchema.Expiration)
-		slog.Debug("fight results",
+		l.Debug("fight results",
 			"results", f.FightResponse,
 			"cooldown", fCooldown,
 		)

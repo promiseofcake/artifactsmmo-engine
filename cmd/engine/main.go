@@ -15,6 +15,7 @@ import (
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/engine"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
 )
 
 func init() {
@@ -56,14 +57,16 @@ func main() {
 	wg := &sync.WaitGroup{}
 	for _, c := range characters {
 		wg.Add(1)
-		slog.Info("starting BuildInventory engine", "character", c)
-		go func(ctx context.Context) {
+
+		charCtx := logging.ContextWithLogger(ctx, slog.With("character", c))
+		logging.Get(charCtx).Info("starting BuildInventory engine")
+		go func(charCtx context.Context) {
 			defer wg.Done()
-			err = blockInitialAction(ctx, r, c)
+			err = blockInitialAction(charCtx, r, c)
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = engine.BuildInventory(ctx, r, c)
+			err = engine.BuildInventory(charCtx, r, c)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -116,7 +119,7 @@ func blockInitialAction(ctx context.Context, r *actions.Runner, character string
 	}
 
 	if d > 0 {
-		slog.Info("character on cooldown waiting...", "duration", d)
+		logging.Get(ctx).Info("character on cooldown waiting...", "character", character, "duration", d)
 		time.Sleep(d)
 	}
 	return nil

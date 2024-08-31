@@ -1,9 +1,7 @@
 package models
 
 import (
-	"cmp"
 	"log/slog"
-	"slices"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -52,11 +50,12 @@ func (c Character) ChooseWeakestSkill() CharacterSkill {
 		},
 	}
 
-	slices.SortFunc(skills, func(a, b CharacterSkill) int {
-		return cmp.Compare(a.CurrentLevel, b.CurrentLevel)
-	})
+	return skills[2] // fish are friends not food LFG
 
-	return skills[0]
+	//slices.SortFunc(skills, func(a, b CharacterSkill) int {
+	//	return cmp.Compare(a.CurrentLevel, b.CurrentLevel)
+	//})
+	//return skills[0]
 }
 
 // GetCooldownDuration returns the time.Duration remaining on the character for cooldown
@@ -75,13 +74,14 @@ func (c Character) GetPosition() Coords {
 
 // ShouldBank will determine if the character should empty their inventory to the bank
 func (c Character) ShouldBank() bool {
+	l := slog.With("character", c.Name)
 	percentFull := float64(c.CountInventory()) / float64(c.InventoryMaxItems)
 	result := []any{"percent_full", percentFull}
 	if percentFull > 0.9 {
-		slog.Debug("Character should bank", result...)
+		l.Debug("Character should bank", result...)
 		return true
 	} else {
-		slog.Debug("Character should not bank", result...)
+		l.Debug("Character should not bank", result...)
 		return false
 	}
 }

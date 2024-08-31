@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -12,7 +13,9 @@ import (
 
 // Runner is an executor for various Actions (Character / State)
 type Runner struct {
-	Client *client.ClientWithResponses
+	Client      *client.ClientWithResponses
+	BankMutex   sync.Mutex
+	RefineMutex sync.Mutex
 }
 
 type retryLogger struct {
@@ -53,7 +56,6 @@ func NewDefaultRunner(token string) (*Runner, error) {
 		}
 	}
 
-	rClient.CheckRetry = retryablehttp.DefaultRetryPolicy
 	c, err := client.NewClientWithResponses(
 		"https://api.artifactsmmo.com",
 		client.WithRequestEditorFn(client.NewBearerAuthorizationRequestFunc(token)),
