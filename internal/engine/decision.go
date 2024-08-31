@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -41,6 +42,35 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 				default:
 					slog.Debug("running operations")
 				}
+			}
+		}
+	}
+}
+
+func CookAll(ctx context.Context, r *actions.Runner, character string) error {
+	c, err := r.GetMyCharacterInfo(ctx, character)
+	if err != nil {
+		return fmt.Errorf("get character info: %w", err)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			slog.Debug("cooking loop canceled.")
+			return nil
+		default:
+			slog.Debug("cooking")
+			rErr := Refine(ctx, r, c.Name)
+			if rErr != nil && errors.Is(rErr, NoItemsToRefine) {
+				bErr := BuildInventory(ctx, r, character)
+				if bErr != nil {
+					return bErr
+				}
+			} else {
+				slog.Error("failed to refine", "character", character, "error", rErr)
 			}
 		}
 	}

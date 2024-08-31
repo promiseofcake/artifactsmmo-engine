@@ -53,7 +53,6 @@ func NewDefaultRunner(token string) (*Runner, error) {
 		}
 	}
 
-	rClient.CheckRetry = retryablehttp.DefaultRetryPolicy
 	c, err := client.NewClientWithResponses(
 		"https://api.artifactsmmo.com",
 		client.WithRequestEditorFn(client.NewBearerAuthorizationRequestFunc(token)),

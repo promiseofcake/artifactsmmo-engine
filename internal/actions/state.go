@@ -123,11 +123,14 @@ func (r *Runner) GetItems(ctx context.Context, min, max int, skill string, mater
 		return models.Items{}, err
 	}
 
+	var items models.Items
 	for _, i := range resp.JSON200.Data {
-		i.Craft.AsCraftSchema()
+		a := models.Item{ItemSchema: i}
+		a.RawCode = material
+		items = append(items, a)
 	}
 
-	return models.Items{}, nil
+	return items, nil
 }
 
 // GetMonsters fetches monster world state based upon a given content type
