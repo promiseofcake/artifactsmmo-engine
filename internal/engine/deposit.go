@@ -2,11 +2,11 @@ package engine
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
+	"github.com/promiseofcake/artifactsmmo-engine/cmd/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
@@ -14,7 +14,7 @@ import (
 // DepositAll is an engine operation which commands a character
 // to visit a bank and deposit all of their inventory
 func DepositAll(ctx context.Context, r *actions.Runner, character string) error {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	err := Travel(ctx, r, character, models.Location{
 		Type: string(client.Bank),
 		Code: string(client.Bank),

@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"math"
 	"slices"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
+	"github.com/promiseofcake/artifactsmmo-engine/cmd/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
@@ -20,9 +20,8 @@ var NoItemsToRefine = errors.New("no items to refine")
 
 func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	var err error
-
 	// assign character
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 
 	l.Debug("waiting for refine lock")
 	r.RefineMutex.Lock()
@@ -175,7 +174,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 }
 
 func RefineAll(ctx context.Context, r *actions.Runner, character string) error {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("get character info: %w", err)

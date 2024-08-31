@@ -3,18 +3,19 @@ package engine
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"math"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
+	"github.com/promiseofcake/artifactsmmo-engine/cmd/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
 // Move physically moves a character if they aren't already there
 func Move(ctx context.Context, r *actions.Runner, character string, coords models.Coords) error {
+	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("failed to get character: %w", err)
@@ -26,11 +27,11 @@ func Move(ctx context.Context, r *actions.Runner, character string, coords model
 			return fmt.Errorf("failed to move: %w", mErr)
 		}
 		cooldown := time.Until(m.CooldownSchema.Expiration)
-		slog.Debug("moved to location", "coords", coords, "char", character, "cooldown", cooldown)
+		l.Debug("moved to location", "coords", coords, "char", character, "cooldown", cooldown)
 		c.CharacterSchema = m.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	} else {
-		slog.Debug("character already at location, skipping", "coords", coords, "char", character)
+		l.Debug("character already at location, skipping", "coords", coords, "char", character)
 	}
 
 	return nil
@@ -38,7 +39,7 @@ func Move(ctx context.Context, r *actions.Runner, character string, coords model
 
 // Travel facilitates travel to the nearest location for a given type/code
 func Travel(ctx context.Context, r *actions.Runner, character string, location models.Location) error {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	maps, err := r.GetMaps(ctx, client.GetAllMapsMapsGetParamsContentType(location.Type))
 	if err != nil {
 		l.Error("failed to get maps", "error", err)

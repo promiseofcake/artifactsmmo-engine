@@ -3,8 +3,8 @@ package engine
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
+	"github.com/promiseofcake/artifactsmmo-engine/cmd/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
@@ -16,7 +16,7 @@ type Operation func(ctx context.Context, r *actions.Runner, character models.Cha
 // BuildInventory commands a character to focus on building their inventory
 // for harvestable items
 func BuildInventory(ctx context.Context, r *actions.Runner, character string) error {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	operations := []Operation{gather, bank, refine}
 	//operations := []Operation{gather, bank}
 	c, err := r.GetMyCharacterInfo(ctx, character)
@@ -50,7 +50,7 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 
 // Operation loops
 func bank(ctx context.Context, r *actions.Runner, character models.Character) bool {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	for {
 		select {
 		case <-ctx.Done():
@@ -69,7 +69,7 @@ func bank(ctx context.Context, r *actions.Runner, character models.Character) bo
 }
 
 func gather(ctx context.Context, r *actions.Runner, character models.Character) bool {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	for {
 		select {
 		case <-ctx.Done():
@@ -88,7 +88,7 @@ func gather(ctx context.Context, r *actions.Runner, character models.Character) 
 }
 
 func refine(ctx context.Context, r *actions.Runner, character models.Character) bool {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	for {
 		select {
 		case <-ctx.Done():

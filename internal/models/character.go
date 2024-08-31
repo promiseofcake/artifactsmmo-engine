@@ -74,13 +74,14 @@ func (c Character) GetPosition() Coords {
 
 // ShouldBank will determine if the character should empty their inventory to the bank
 func (c Character) ShouldBank() bool {
+	l := slog.With("character", c.Name)
 	percentFull := float64(c.CountInventory()) / float64(c.InventoryMaxItems)
 	result := []any{"percent_full", percentFull}
 	if percentFull > 0.9 {
-		slog.Debug("Character should bank", result...)
+		l.Debug("Character should bank", result...)
 		return true
 	} else {
-		slog.Debug("Character should not bank", result...)
+		l.Debug("Character should not bank", result...)
 		return false
 	}
 }

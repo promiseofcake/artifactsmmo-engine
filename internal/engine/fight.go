@@ -2,10 +2,10 @@ package engine
 
 import (
 	"context"
-	"log/slog"
 	"math"
 	"time"
 
+	"github.com/promiseofcake/artifactsmmo-engine/cmd/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 
@@ -14,7 +14,7 @@ import (
 
 // Fight will attempt to find and fight appropriate monsters
 func Fight(ctx context.Context, r *actions.Runner, character string) error {
-	l := slog.With("character", character)
+	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		l.Error("failed to get character", "error", err)
