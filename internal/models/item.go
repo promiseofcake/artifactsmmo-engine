@@ -14,4 +14,5 @@ type Item struct {
 	client.ItemSchema
 	Quantity int `json:"quantity"`
 	RawCode  string
+	Skill    string
 }

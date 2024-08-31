@@ -16,22 +16,23 @@ import (
 
 // Gather will attempt to Gather resources until the character should bank
 func Gather(ctx context.Context, r *actions.Runner, character string) error {
+	l := slog.With("character", character)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
-		slog.Error("failed to get character", "error", err)
+		l.Error("failed to get character", "error", err)
 		return err
 	}
 
 	resourceLoations, err := r.GetMaps(ctx, client.Resource)
 	if err != nil {
-		slog.Error("failed to get resource locations", "error", err)
+		l.Error("failed to get resource locations", "error", err)
 		return err
 	}
 
 	skill := c.ChooseWeakestSkill()
 	resourceInfo, err := r.GetResources(ctx, skill.Code, skill.MinLevel, skill.CurrentLevel)
 	if err != nil {
-		slog.Error("failed to get resources", "error", err)
+		l.Error("failed to get resources", "error", err)
 		return err
 	}
 
@@ -48,23 +49,23 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 
 	if len(resources) == 0 {
 		err = fmt.Errorf("no suitable resources found")
-		slog.Error("failed to gather", "error", err)
+		l.Error("failed to gather", "error", err)
 		return err
 	}
 
 	// begin
 	resource := resources[0]
-	slog.Debug("choosing to gather", "resource", resource)
+	l.Debug("choosing to gather", "resource", resource)
 
 	// check if we should bank straight away
 	if c.ShouldBank() {
-		slog.Debug("character will bank")
+		l.Debug("character will bank")
 		return nil
 	}
 
 	mErr := Move(ctx, r, character, resource.GetCoords())
 	if mErr != nil {
-		slog.Error("failed to move", "error", err)
+		l.Error("failed to move", "error", err)
 		return err
 	}
 
@@ -76,16 +77,16 @@ func Gather(ctx context.Context, r *actions.Runner, character string) error {
 		default:
 			g, gErr := r.Gather(ctx, character)
 			if gErr != nil {
-				slog.Error("failed to gather", "error", gErr)
+				l.Error("failed to gather", "error", gErr)
 				return gErr
 			}
 			cooldown := time.Until(g.CooldownSchema.Expiration)
-			slog.Info("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)
+			l.Info("gathered resource", "resource", resource, "result", g.SkillInfo, "cooldown", cooldown)
 			c.CharacterSchema = g.CharacterResponse.CharacterSchema
 			time.Sleep(cooldown)
 
 			if c.ShouldBank() {
-				slog.Debug("character will bank")
+				l.Debug("character will bank")
 				return nil
 			}
 		}

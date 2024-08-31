@@ -21,14 +21,23 @@ var NoItemsToRefine = errors.New("no items to refine")
 func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	var err error
 
-	slog.Debug("waiting for refine lock")
+	// assign character
+	l := slog.With("character", character)
+
+	l.Debug("waiting for refine lock")
 	r.RefineMutex.Lock()
-	defer r.RefineMutex.Unlock()
+	defer func() {
+		// Note that while correct uses of TryLock do exist, they are rare,
+		// and use of TryLock is often a sign of a deeper problem
+		// in a particular use of mutexes.
+		r.RefineMutex.TryLock()
+		r.RefineMutex.Unlock()
+	}()
 
 	// get all bank items, determine what's available to refine
 	banked, err := r.GetBankItems(ctx)
 	if err != nil {
-		slog.Debug("failed to get bank items", "error", err)
+		l.Debug("failed to get bank items", "character", character, "error", err)
 		return err
 	}
 
@@ -38,12 +47,12 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	for _, b := range banked {
 		item, iErr := r.GetItem(ctx, b.Code)
 		if iErr != nil {
-			slog.Debug("failed to get item info", "error", iErr)
+			l.Debug("failed to get item info", "character", character, "error", iErr)
 			return iErr
 		}
 
-		// TODO, make this move beyond cooking / fishing
 		item.Quantity = b.Quantity
+		// fishing / cooking is the only thing that is 1:1, we need more math
 		if item.Type == "resource" && item.Craft == nil && item.Subtype == string(client.Fishing) {
 			resources = append(resources, item)
 		}
@@ -52,7 +61,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	// get characater state
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
-		slog.Debug("failed to get character", "error", err)
+		l.Debug("failed to get character", "character", character, "error", err)
 		return err
 	}
 
@@ -137,8 +146,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 
 	// need to travel to refinement location
 	err = Travel(ctx, r, character, models.Location{
-		// TODO, expand to be the type based upon the resource
-		Code: "cooking",
+		Code: resourceToRefine.Skill,
 		Type: "workshop",
 	})
 	if err != nil {
@@ -150,7 +158,8 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	if err != nil {
 		return fmt.Errorf("failed to craft %s, %d, code: %w", resourceToRefine.Code, qty, err)
 	}
-	slog.Debug("skill response", "response", skillresp)
+	l.Debug("skill response", "response", skillresp)
+	r.RefineMutex.Unlock()
 
 	cooldown = time.Until(skillresp.Response.CooldownSchema.Expiration)
 	c.CharacterSchema = skillresp.Response.CharacterResponse.CharacterSchema
@@ -166,6 +175,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 }
 
 func RefineAll(ctx context.Context, r *actions.Runner, character string) error {
+	l := slog.With("character", character)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("get character info: %w", err)
@@ -177,16 +187,16 @@ func RefineAll(ctx context.Context, r *actions.Runner, character string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Debug("refine loop canceled.")
+			l.Debug("refine loop canceled.")
 			return nil
 		default:
-			slog.Debug("refining")
+			l.Debug("refining")
 			rErr := Refine(ctx, r, c.Name)
 			if rErr != nil && errors.Is(rErr, NoItemsToRefine) {
 				// no issue if nothing to refine
 				return nil
 			} else {
-				slog.Error("failed to refine", "character", character, "error", rErr)
+				l.Error("failed to refine", "character", character, "error", rErr)
 				return rErr
 			}
 		}

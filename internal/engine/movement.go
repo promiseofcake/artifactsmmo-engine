@@ -38,9 +38,10 @@ func Move(ctx context.Context, r *actions.Runner, character string, coords model
 
 // Travel facilitates travel to the nearest location for a given type/code
 func Travel(ctx context.Context, r *actions.Runner, character string, location models.Location) error {
+	l := slog.With("character", character)
 	maps, err := r.GetMaps(ctx, client.GetAllMapsMapsGetParamsContentType(location.Type))
 	if err != nil {
-		slog.Error("failed to get maps", "error", err)
+		l.Error("failed to get maps", "error", err)
 		return err
 	}
 
@@ -62,11 +63,11 @@ func Travel(ctx context.Context, r *actions.Runner, character string, location m
 			}
 		}
 	}
-	slog.Debug("location found", "type", location.Type, "code", location.Code, "coords", coords)
+	l.Debug("location found", "type", location.Type, "code", location.Code, "coords", coords)
 
 	err = Move(ctx, r, character, coords)
 	if err != nil {
-		slog.Error("failed to move", "error", err)
+		l.Error("failed to move", "error", err)
 		return err
 	}
 

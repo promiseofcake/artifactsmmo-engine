@@ -127,6 +127,7 @@ func (r *Runner) GetItems(ctx context.Context, min, max int, skill string, mater
 	for _, i := range resp.JSON200.Data {
 		a := models.Item{ItemSchema: i}
 		a.RawCode = material
+		a.Skill = skill
 		items = append(items, a)
 	}
 

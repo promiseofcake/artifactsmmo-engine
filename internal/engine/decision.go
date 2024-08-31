@@ -16,6 +16,7 @@ type Operation func(ctx context.Context, r *actions.Runner, character models.Cha
 // BuildInventory commands a character to focus on building their inventory
 // for harvestable items
 func BuildInventory(ctx context.Context, r *actions.Runner, character string) error {
+	l := slog.With("character", character)
 	operations := []Operation{gather, bank, refine}
 	//operations := []Operation{gather, bank}
 	c, err := r.GetMyCharacterInfo(ctx, character)
@@ -30,17 +31,17 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Debug("operation loop canceled.")
+			l.Debug("operation loop canceled.")
 			return nil
 		default:
 			currentIndex = (currentIndex + 1) % len(operations)
 			for !operations[currentIndex](ctx, r, c) {
 				select {
 				case <-ctx.Done():
-					slog.Debug("engine canceled during processing.")
+					l.Debug("engine canceled during processing.")
 					return nil
 				default:
-					slog.Debug("running operations")
+					l.Debug("running operations")
 				}
 			}
 		}
@@ -49,54 +50,57 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 
 // Operation loops
 func bank(ctx context.Context, r *actions.Runner, character models.Character) bool {
+	l := slog.With("character", character)
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Debug("banking context closed")
+			l.Debug("banking context closed")
 			return true
 		default:
-			slog.Debug("banking")
+			l.Debug("banking")
 			err := DepositAll(ctx, r, character.Name)
 			if err != nil {
 				panic(err)
 			}
-			slog.Debug("banking done")
+			l.Debug("banking done")
 			return true
 		}
 	}
 }
 
 func gather(ctx context.Context, r *actions.Runner, character models.Character) bool {
+	l := slog.With("character", character)
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Debug("gather context closed")
+			l.Debug("gather context closed")
 			return true
 		default:
-			slog.Debug("gathering")
+			l.Debug("gathering")
 			err := Gather(ctx, r, character.Name)
 			if err != nil {
 				panic(err)
 			}
-			slog.Debug("gathering done")
+			l.Debug("gathering done")
 			return true
 		}
 	}
 }
 
 func refine(ctx context.Context, r *actions.Runner, character models.Character) bool {
+	l := slog.With("character", character)
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Debug("refine context closed")
+			l.Debug("refine context closed")
 			return true
 		default:
-			slog.Debug("refining")
+			l.Debug("refining")
 			err := RefineAll(ctx, r, character.Name)
 			if err != nil {
 				panic(err)
 			}
-			slog.Debug("refining done")
+			l.Debug("refining done")
 			return true
 		}
 	}
