@@ -66,7 +66,6 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			//err = engine.CookAll(ctx, r, c)
 			err = engine.BuildInventory(charCtx, r, c)
 			if err != nil {
 				log.Fatal(err)
