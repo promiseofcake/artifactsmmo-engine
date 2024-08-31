@@ -8,8 +8,8 @@ import (
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
-	"github.com/promiseofcake/artifactsmmo-engine/cmd/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
