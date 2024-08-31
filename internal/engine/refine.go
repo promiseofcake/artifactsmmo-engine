@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"math"
 	"slices"
@@ -154,4 +155,32 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	return nil
+}
+
+func RefineAll(ctx context.Context, r *actions.Runner, character string) error {
+	c, err := r.GetMyCharacterInfo(ctx, character)
+	if err != nil {
+		return fmt.Errorf("get character info: %w", err)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			slog.Debug("refine loop canceled.")
+			return nil
+		default:
+			slog.Debug("refining")
+			rErr := Refine(ctx, r, c.Name)
+			if rErr != nil && errors.Is(rErr, NoItemsToRefine) {
+				// no issue if nothing to refine
+				return nil
+			} else {
+				slog.Error("failed to refine", "character", character, "error", rErr)
+				return rErr
+			}
+		}
+	}
 }
