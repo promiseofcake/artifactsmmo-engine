@@ -17,14 +17,15 @@ var NoItemsToRefine = errors.New("no items to refine")
 
 func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	var err error
-	// need to determine what is available to refine
+	// get all bank items, determine what's available to refine
 	banked, err := r.GetBankItems(ctx)
 	if err != nil {
 		slog.Debug("failed to get bank items", "error", err)
 		return err
 	}
 
-	// lookup all the bank items and make a list of reosurces
+	// given all the banked items, get information on each of them and call
+	// them resources
 	var resources models.Items
 	for _, b := range banked {
 		item, iErr := r.GetItem(ctx, b.Code)
@@ -33,52 +34,55 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 			return iErr
 		}
 
-		// only look for resources we can work with
+		// TODO, make this move beyond cooking / fishing
 		item.Quantity = b.Quantity
 		if item.Type == "resource" && item.Subtype == string(client.Fishing) {
 			resources = append(resources, item)
 		}
 	}
 
-	// given a list of all the current resources and their quantity, determine what to refine
-	// subtype is the thing itself
+	// get characater state
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		slog.Debug("failed to get character", "error", err)
 		return err
 	}
 
-	// we know they are things to be cooked
-	// so we want to get the cooked versions of these things and determine which we can cook
+	// given the resources we have (hydrated bank items), try to determine which of these items
+	// our character is available to refine based upon their level
+	var refinable models.Items
+	for _, res := range resources {
+		var refineLevel int
+		var skillType string
 
-	// what to refine?
-	var items models.Items
-	for _, have := range resources {
-		// given subtype, lookup level
-		var cl int
-		var st string
-		switch have.Subtype {
-		//case string(client.Woodcutting):
-		//	cl = c.WoodcuttingLevel
-		//case string(client.Mining):
-		//	cl = c.MiningLevel
+		// given the resource's subtype, lookup this characters
+		// skill level, and fetch all items one could make
+		// with the current given skill level
+		switch res.Subtype {
+		case string(client.Woodcutting):
+			refineLevel = c.WoodcuttingLevel
+			skillType = string(client.CraftSchemaSkillWoodcutting)
+		case string(client.Mining):
+			refineLevel = c.MiningLevel
+			skillType = string(client.CraftSchemaSkillMining)
 		case string(client.Fishing):
-			cl = c.CookingLevel
-			st = "cooking"
+			refineLevel = c.CookingLevel
+			skillType = string(client.CraftSchemaSkillCooking)
 		}
 
-		ii, iErr := r.GetItems(ctx, 0, cl, st, have.Code)
+		items, iErr := r.GetItems(ctx, 0, refineLevel, skillType, res.Code)
 		if iErr != nil {
 			return iErr
 		}
-		items = append(items, ii...)
+		refinable = append(refinable, items...)
 	}
 
-	if len(items) == 0 {
+	if len(refinable) == 0 {
 		return NoItemsToRefine
 	}
 
-	// need to travel to bank
+	// since we know there are items we can refine
+	// we need to go to the bank to refine them
 	err = Travel(ctx, r, character, models.Location{
 		Code: "bank",
 		Type: "bank",
@@ -87,23 +91,29 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		return err
 	}
 
+	// empty the inventory to maximize refining
 	err = DepositAll(ctx, r, character)
 	if err != nil {
 		return err
 	}
 
-	// find item and quantity to withdraw
-	var getQ int
-	for _, get := range resources {
-		if get.Code == items[0].RawCode {
-			getQ = get.Quantity
+	// given the first item in the list (we should sort it)
+	// determine how much we want to withdraw.
+
+	// look over all the resources we have in the bank
+	// look over all the refinable items that match that
+	// resource, and then go for the first one.
+	var resourceToRefine = refinable[0]
+	var available int
+	for _, res := range resources {
+		if res.Code == resourceToRefine.RawCode {
+			available = res.Quantity
 		}
 	}
 
-	// need to withdraw
-	fetched := int(math.Min(float64(c.InventoryMaxItems), float64(getQ)))
+	fetched := int(math.Min(float64(c.InventoryMaxItems), float64(available)))
 	resp, err := r.Client.ActionWithdrawBankMyNameActionBankWithdrawPostWithResponse(ctx, c.Name, client.ActionWithdrawBankMyNameActionBankWithdrawPostJSONRequestBody{
-		Code:     items[0].RawCode,
+		Code:     resourceToRefine.RawCode,
 		Quantity: fetched,
 	})
 	if err != nil {
@@ -120,6 +130,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 
 	// need to travel to refinement location
 	err = Travel(ctx, r, character, models.Location{
+		// TODO, expand to be the type based upon the resource
 		Code: "cooking",
 		Type: "workshop",
 	})
@@ -127,8 +138,8 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		return err
 	}
 
-	// need to refine
-	skillresp, err := r.Craft(ctx, character, items[0].Code, fetched)
+	// need to refine the item
+	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, fetched)
 	if err != nil {
 		return err
 	}
