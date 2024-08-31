@@ -20,6 +20,11 @@ var NoItemsToRefine = errors.New("no items to refine")
 
 func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	var err error
+
+	slog.Debug("waiting for refine lock")
+	r.RefineMutex.Lock()
+	defer r.RefineMutex.Unlock()
+
 	// get all bank items, determine what's available to refine
 	banked, err := r.GetBankItems(ctx)
 	if err != nil {
@@ -39,7 +44,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 
 		// TODO, make this move beyond cooking / fishing
 		item.Quantity = b.Quantity
-		if item.Type == "resource" && item.Subtype == string(client.Fishing) {
+		if item.Type == "resource" && item.Craft == nil && item.Subtype == string(client.Fishing) {
 			resources = append(resources, item)
 		}
 	}
@@ -76,6 +81,9 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		items, iErr := r.GetItems(ctx, 0, refineLevel, skillType, res.Code)
 		if iErr != nil {
 			return iErr
+		}
+		if len(items) == 0 {
+			continue
 		}
 		refinable = append(refinable, items...)
 	}
@@ -118,7 +126,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 	qty := int(math.Min(float64(c.InventoryMaxItems), float64(available)))
 
-	resp, err := r.Withdraw(ctx, character, resourceToRefine.Code, qty)
+	resp, err := r.Withdraw(ctx, character, resourceToRefine.RawCode, qty)
 	if err != nil {
 		return err
 	}
@@ -140,7 +148,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	// need to refine the item
 	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, qty)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to craft %s, %d, code: %w", resourceToRefine.Code, qty, err)
 	}
 	slog.Debug("skill response", "response", skillresp)
 

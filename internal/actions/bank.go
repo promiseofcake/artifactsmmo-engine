@@ -39,6 +39,8 @@ func (r *Runner) Deposit(ctx context.Context, character string, code string, qty
 
 // Withdraw withdraws an item from the bank with the given quantity
 func (r *Runner) Withdraw(ctx context.Context, character string, code string, qty int) (*BankResponse, error) {
+	r.BankMutex.Lock()
+	defer r.BankMutex.Unlock()
 	resp, err := r.Client.ActionWithdrawBankMyNameActionBankWithdrawPostWithResponse(ctx, character, client.ActionWithdrawBankMyNameActionBankWithdrawPostJSONRequestBody{
 		Code:     code,
 		Quantity: qty,
