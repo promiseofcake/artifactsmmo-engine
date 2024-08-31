@@ -117,7 +117,7 @@ func blockInitialAction(ctx context.Context, r *actions.Runner, character string
 	}
 
 	if d > 0 {
-		slog.Info("character on cooldown waiting...", "duration", d)
+		slog.Info("character on cooldown waiting...", "character", character, "duration", d)
 		time.Sleep(d)
 	}
 	return nil

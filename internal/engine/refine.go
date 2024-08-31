@@ -1,10 +1,12 @@
 package engine
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"log/slog"
 	"math"
+	"slices"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -99,6 +101,9 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 
 	// given the first item in the list (we should sort it)
 	// determine how much we want to withdraw.
+	slices.SortFunc(refinable, func(a, b models.Item) int {
+		return cmp.Compare(b.Level, a.Level)
+	})
 
 	// look over all the resources we have in the bank
 	// look over all the refinable items that match that
@@ -110,22 +115,15 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 			available = res.Quantity
 		}
 	}
+	qty := int(math.Min(float64(c.InventoryMaxItems), float64(available)))
 
-	fetched := int(math.Min(float64(c.InventoryMaxItems), float64(available)))
-	resp, err := r.Client.ActionWithdrawBankMyNameActionBankWithdrawPostWithResponse(ctx, c.Name, client.ActionWithdrawBankMyNameActionBankWithdrawPostJSONRequestBody{
-		Code:     resourceToRefine.RawCode,
-		Quantity: fetched,
-	})
+	resp, err := r.Withdraw(ctx, character, resourceToRefine.Code, qty)
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode() != 200 {
-		return errors.New(resp.Status())
-	}
-
-	cooldown := time.Until(resp.JSON200.Data.Cooldown.Expiration)
-	c.CharacterSchema = resp.JSON200.Data.Character
+	cooldown := time.Until(resp.CooldownSchema.Expiration)
+	c.CharacterSchema = resp.CharacterResponse.CharacterSchema
 	time.Sleep(cooldown)
 
 	// need to travel to refinement location
@@ -139,15 +137,11 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	// need to refine the item
-	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, fetched)
+	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, qty)
 	if err != nil {
 		return err
 	}
 	slog.Debug("skill response", "response", skillresp)
-
-	if resp.StatusCode() != 200 {
-		return errors.New(resp.Status())
-	}
 
 	cooldown = time.Until(skillresp.Response.CooldownSchema.Expiration)
 	c.CharacterSchema = skillresp.Response.CharacterResponse.CharacterSchema
