@@ -59,7 +59,8 @@ func main() {
 		wg.Add(1)
 
 		charCtx := logging.ContextWithLogger(ctx, slog.With("character", c))
-		logging.Get(charCtx).Info("starting BuildInventory engine")
+		l := logging.Get(charCtx)
+		l.Info("starting BuildInventory engine")
 		go func(charCtx context.Context) {
 			defer wg.Done()
 			err = blockInitialAction(charCtx, r, c)
@@ -67,6 +68,7 @@ func main() {
 				log.Fatal(err)
 			}
 			err = engine.BuildInventory(charCtx, r, c)
+			//err = engine.RefineAll(charCtx, r, c)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -108,6 +110,7 @@ func bindFlags(flags []string) error {
 }
 
 func blockInitialAction(ctx context.Context, r *actions.Runner, character string) error {
+	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("failed to get character: %w", err)
@@ -119,7 +122,7 @@ func blockInitialAction(ctx context.Context, r *actions.Runner, character string
 	}
 
 	if d > 0 {
-		logging.Get(ctx).Info("character on cooldown waiting...", "character", character, "duration", d)
+		l.Info("character on cooldown waiting...", "character", character, "duration", d)
 		time.Sleep(d)
 	}
 	return nil

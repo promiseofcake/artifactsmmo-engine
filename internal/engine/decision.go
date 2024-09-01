@@ -17,8 +17,8 @@ type Operation func(ctx context.Context, r *actions.Runner, character models.Cha
 // for harvestable items
 func BuildInventory(ctx context.Context, r *actions.Runner, character string) error {
 	l := logging.Get(ctx)
-	operations := []Operation{gather, bank, refine}
-	//operations := []Operation{gather, bank}
+	//operations := []Operation{gather, bank, refine}
+	operations := []Operation{gather, bank}
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("get character info: %w", err)

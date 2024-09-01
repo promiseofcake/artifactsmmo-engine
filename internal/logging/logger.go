@@ -14,5 +14,9 @@ func ContextWithLogger(ctx context.Context, l *slog.Logger) context.Context {
 }
 
 func Get(ctx context.Context) *slog.Logger {
-	return ctx.Value(loggerKey).(*slog.Logger)
+	if l := ctx.Value(loggerKey); l != nil {
+		return l.(*slog.Logger)
+	} else {
+		return slog.Default()
+	}
 }
