@@ -14,5 +14,10 @@ func ContextWithLogger(ctx context.Context, l *slog.Logger) context.Context {
 }
 
 func Get(ctx context.Context) *slog.Logger {
-	return ctx.Value(loggerKey).(*slog.Logger)
+	logger, ok := ctx.Value(loggerKey).(*slog.Logger)
+	if !ok {
+		slog.Error("failed to get logger from context")
+		return slog.Default()
+	}
+	return logger
 }

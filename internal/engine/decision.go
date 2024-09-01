@@ -2,7 +2,9 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
@@ -15,10 +17,26 @@ type Operation func(ctx context.Context, r *actions.Runner, character models.Cha
 
 // BuildInventory commands a character to focus on building their inventory
 // for harvestable items
-func BuildInventory(ctx context.Context, r *actions.Runner, character string) error {
+func BuildInventory(ctx context.Context, r *actions.Runner, character string, actions []string) error {
 	l := logging.Get(ctx)
-	operations := []Operation{gather, bank, refine}
-	//operations := []Operation{gather, bank}
+
+	var operations []Operation
+	for _, op := range actions {
+		switch op {
+		case "bank":
+			operations = append(operations, bank)
+		case "gather":
+			operations = append(operations, gather)
+		case "refine":
+			operations = append(operations, refine)
+		}
+	}
+
+	if len(operations) == 0 {
+		slog.Error("nothing to do for character")
+		return errors.New("nothing to do for character")
+	}
+
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
 		return fmt.Errorf("get character info: %w", err)
@@ -34,6 +52,7 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string) er
 			l.Debug("operation loop canceled.")
 			return nil
 		default:
+			// TODO this isnt' right
 			currentIndex = (currentIndex + 1) % len(operations)
 			for !operations[currentIndex](ctx, r, c) {
 				select {
