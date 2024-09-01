@@ -61,6 +61,7 @@ func main() {
 		charCtx := logging.ContextWithLogger(ctx, slog.With("character", c))
 		l := logging.Get(charCtx)
 		l.Info("starting BuildInventory engine")
+
 		go func(charCtx context.Context) {
 			defer wg.Done()
 			err = blockInitialAction(charCtx, r, c)
@@ -68,11 +69,10 @@ func main() {
 				log.Fatal(err)
 			}
 			err = engine.BuildInventory(charCtx, r, c)
-			//err = engine.RefineAll(charCtx, r, c)
 			if err != nil {
 				log.Fatal(err)
 			}
-		}(ctx)
+		}(charCtx)
 	}
 
 	slog.Info("waiting for processes to complete")
