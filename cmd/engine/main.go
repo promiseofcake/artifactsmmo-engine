@@ -27,14 +27,29 @@ func init() {
 }
 
 const (
-	configFlag     = "config"
-	tokenFlag      = "token"
-	logLevelFlag   = "log_level"
-	charactersFlag = "characters"
+	configFlag   = "config"
+	tokenFlag    = "token"
+	logLevelFlag = "log_level"
 )
+
+type Config struct {
+	Token      string      `mapstructure:"token"`
+	LogLevel   int         `mapstructure:"log_level"`
+	Characters []Character `mapstructure:"characters"`
+}
+
+type Character struct {
+	Name    string   `mapstructure:"name"`
+	Actions []string `mapstructure:"actions"`
+}
 
 func main() {
 	v := initializeFlags()
+
+	var cfg Config
+	if err := viper.Unmarshal(&cfg); err != nil {
+		log.Fatal(err)
+	}
 
 	w := os.Stdout
 	slog.SetDefault(slog.New(
@@ -52,23 +67,22 @@ func main() {
 	}
 
 	ctx := context.Background()
-	characters := v.GetStringSlice(charactersFlag)
 
 	wg := &sync.WaitGroup{}
-	for _, c := range characters {
+	for _, c := range cfg.Characters {
 		wg.Add(1)
 
-		charCtx := logging.ContextWithLogger(ctx, slog.With("character", c))
+		charCtx := logging.ContextWithLogger(ctx, slog.With("character", c.Name))
 		l := logging.Get(charCtx)
 		l.Info("starting BuildInventory engine")
 
 		go func(charCtx context.Context) {
 			defer wg.Done()
-			err = blockInitialAction(charCtx, r, c)
+			err = blockInitialAction(charCtx, r, c.Name)
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = engine.BuildInventory(charCtx, r, c)
+			err = engine.BuildInventory(charCtx, r, c.Name, c.Actions)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -82,7 +96,6 @@ func main() {
 func initializeFlags() *viper.Viper {
 	config := flag.String(configFlag, "", "path to config file")
 	_ = flag.String(tokenFlag, "", "API token")
-	_ = flag.StringSlice(charactersFlag, []string{}, "list of characters")
 	_ = flag.Int(logLevelFlag, int(slog.LevelInfo), "log level")
 	flag.Parse()
 
@@ -91,7 +104,7 @@ func initializeFlags() *viper.Viper {
 		log.Fatal(err)
 	}
 
-	err = bindFlags([]string{configFlag, logLevelFlag, tokenFlag, charactersFlag})
+	err = bindFlags([]string{configFlag, logLevelFlag, tokenFlag})
 	if err != nil {
 		log.Fatal(err)
 	}
