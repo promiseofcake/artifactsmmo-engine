@@ -48,6 +48,10 @@ func NewDefaultRunner(token string) (*Runner, error) {
 
 	// setup retries for contention
 	rClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		if resp == nil || err != nil {
+			return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+		}
+
 		switch resp.StatusCode {
 		case 461, 486, 499:
 			return true, nil
