@@ -74,7 +74,7 @@ func main() {
 
 		charCtx := logging.ContextWithLogger(ctx, slog.With("character", c.Name))
 		l := logging.Get(charCtx)
-		l.Info("starting BuildInventory engine")
+		l.Info("starting BuildInventory engine", "actions", c.Actions)
 
 		go func(charCtx context.Context) {
 			defer wg.Done()

@@ -36,7 +36,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	// get all bank items, determine what's available to refine
 	banked, err := r.GetBankItems(ctx)
 	if err != nil {
-		l.Debug("failed to get bank items", "character", character, "error", err)
+		l.Error("failed to get bank items", "character", character, "error", err)
 		return err
 	}
 
@@ -46,7 +46,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	for _, b := range banked {
 		item, iErr := r.GetItem(ctx, b.Code)
 		if iErr != nil {
-			l.Debug("failed to get item info", "character", character, "error", iErr)
+			l.Error("failed to get item info", "character", character, "error", iErr)
 			return iErr
 		}
 
@@ -60,7 +60,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	// get characater state
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
-		l.Debug("failed to get character", "character", character, "error", err)
+		l.Error("failed to get character", "character", character, "error", err)
 		return err
 	}
 
@@ -86,7 +86,8 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 			skillType = string(client.CraftSchemaSkillCooking)
 		}
 
-		items, iErr := r.GetItems(ctx, 0, refineLevel, skillType, res.Code)
+		minLevel := int(math.Max(0, float64(refineLevel-12)))
+		items, iErr := r.GetItems(ctx, minLevel, refineLevel, skillType, res.Code)
 		if iErr != nil {
 			return iErr
 		}
@@ -99,6 +100,23 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	if len(refinable) == 0 {
 		return NoItemsToRefine
 	}
+
+	// given the first item in the list (we should sort it)
+	// determine how much we want to withdraw.
+	slices.SortFunc(refinable, func(a, b models.Item) int {
+		return cmp.Compare(a.Level, b.Level)
+	})
+
+	// look over all the resources we have in the bank
+	// look over all the refinable items that match that
+	// resource, and then go for the first one.
+	var resourceToRefine = refinable[0]
+	for _, res := range resources {
+		if res.Code == resourceToRefine.RawCode {
+			resourceToRefine.Quantity = res.Quantity
+		}
+	}
+	l.Info("preparing to refine", "resource", resourceToRefine)
 
 	// since we know there are items we can refine
 	// we need to go to the bank to refine them
@@ -116,34 +134,18 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		return err
 	}
 
-	// given the first item in the list (we should sort it)
-	// determine how much we want to withdraw.
-	slices.SortFunc(refinable, func(a, b models.Item) int {
-		return cmp.Compare(b.Level, a.Level)
-	})
-
-	// look over all the resources we have in the bank
-	// look over all the refinable items that match that
-	// resource, and then go for the first one.
-	var resourceToRefine = refinable[0]
-	var available int
-	for _, res := range resources {
-		if res.Code == resourceToRefine.RawCode {
-			available = res.Quantity
-		}
-	}
-	qty := int(math.Min(float64(c.InventoryMaxItems), float64(available)))
-
+	qty := int(math.Min(float64(c.InventoryMaxItems), float64(resourceToRefine.Quantity)))
+	l.Info("withdrawing", "resource", resourceToRefine.RawCode, "quantity", qty)
 	resp, err := r.Withdraw(ctx, character, resourceToRefine.RawCode, qty)
 	if err != nil {
 		return err
 	}
-
 	cooldown := time.Until(resp.CooldownSchema.Expiration)
 	c.CharacterSchema = resp.CharacterResponse.CharacterSchema
 	time.Sleep(cooldown)
 
 	// need to travel to refinement location
+	l.Info("traveling to workshop", "skill", resourceToRefine.Skill)
 	err = Travel(ctx, r, character, models.Location{
 		Code: resourceToRefine.Skill,
 		Type: "workshop",
@@ -153,11 +155,12 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	// need to refine the item
+	l.Info("refining", "resource", resourceToRefine.Code, "quantity", qty)
 	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, qty)
 	if err != nil {
 		return fmt.Errorf("failed to craft %s, %d, code: %w", resourceToRefine.Code, qty, err)
 	}
-	l.Debug("skill response", "response", skillresp)
+	l.Info("skill response", "response", skillresp.SkillInfo)
 	r.RefineMutex.Unlock()
 
 	cooldown = time.Until(skillresp.Response.CooldownSchema.Expiration)
@@ -191,7 +194,7 @@ func RefineAll(ctx context.Context, r *actions.Runner, character string) error {
 		default:
 			l.Debug("refining")
 			rErr := Refine(ctx, r, c.Name)
-			if rErr != nil && errors.Is(rErr, NoItemsToRefine) {
+			if rErr == nil || errors.Is(rErr, NoItemsToRefine) {
 				// no issue if nothing to refine
 				return nil
 			} else {
