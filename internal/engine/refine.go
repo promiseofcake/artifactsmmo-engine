@@ -86,7 +86,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 			skillType = string(client.CraftSchemaSkillCooking)
 		}
 
-		minLevel := int(math.Max(0, float64(refineLevel-12)))
+		minLevel := int(math.Max(0, float64(refineLevel-10)))
 		items, iErr := r.GetItems(ctx, minLevel, refineLevel, skillType, res.Code)
 		if iErr != nil {
 			return iErr
