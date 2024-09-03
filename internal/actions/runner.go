@@ -35,7 +35,7 @@ func (h *retryLogger) Info(msg string, keysAndValues ...interface{}) {
 	h.Logger.Info(msg, keysAndValues...)
 }
 func (h *retryLogger) Debug(msg string, keysAndValues ...interface{}) {
-	h.Logger.Debug(msg, keysAndValues...)
+	//h.Logger.Debug(msg, keysAndValues...)
 }
 func (h *retryLogger) Warn(msg string, keysAndValues ...interface{}) {
 	h.Logger.Warn(msg, keysAndValues...)

@@ -1,7 +1,9 @@
 package models
 
 import (
+	"cmp"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
@@ -50,12 +52,10 @@ func (c Character) ChooseWeakestSkill() CharacterSkill {
 		},
 	}
 
-	return skills[2] // fish are friends not food LFG
-
-	//slices.SortFunc(skills, func(a, b CharacterSkill) int {
-	//	return cmp.Compare(a.CurrentLevel, b.CurrentLevel)
-	//})
-	//return skills[0]
+	slices.SortFunc(skills, func(a, b CharacterSkill) int {
+		return cmp.Compare(a.CurrentLevel, b.CurrentLevel)
+	})
+	return skills[0]
 }
 
 // GetCooldownDuration returns the time.Duration remaining on the character for cooldown
