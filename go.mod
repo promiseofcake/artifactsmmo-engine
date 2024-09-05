@@ -5,7 +5,7 @@ go 1.22.5
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/lmittmann/tint v1.0.5
-	github.com/promiseofcake/artifactsmmo-go-client v1.7.0
+	github.com/promiseofcake/artifactsmmo-go-client v1.7.1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0

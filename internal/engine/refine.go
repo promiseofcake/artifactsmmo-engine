@@ -104,7 +104,11 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		}
 
 		// min level current level - 10
-		minLevel := int(math.Max(0, float64(refineLevel-10)))
+		// TODO make overridable
+		//minLevel := int(math.Max(0, float64(refineLevel-10)))
+
+		// allow all items to be refined
+		minLevel := 0
 
 		// get items that match
 		items, iErr := r.GetItems(ctx, minLevel, refineLevel, skillType, res.Code)
@@ -121,10 +125,9 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		return NoItemsToRefine
 	}
 
-	// given the first item in the list (we should sort it)
-	// determine how much we want to withdraw.
+	// sort list with higher level items first
 	slices.SortFunc(refinable, func(a, b *models.Item) int {
-		return cmp.Compare(a.Level, b.Level)
+		return cmp.Compare(b.Level, a.Level)
 	})
 
 	// look over all the resources we have in the bank
