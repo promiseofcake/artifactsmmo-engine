@@ -9,11 +9,16 @@ type BankItem struct {
 	Quantity int    `json:"quantity"`
 }
 
-type Items []Item
+type Items []*Item
 type Item struct {
 	client.ItemSchema
-	Quantity    int `json:"quantity"`
-	RawCode     string
-	RawQuantity int
-	Skill       string
+	Quantity       int `json:"quantity"`
+	CraftMaterials []*CraftResource
+	Skill          string
+}
+
+type CraftResource struct {
+	RequiredCode    string
+	CostPerResource int
+	Available       int
 }
