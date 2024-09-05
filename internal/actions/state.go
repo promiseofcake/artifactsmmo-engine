@@ -126,8 +126,21 @@ func (r *Runner) GetItems(ctx context.Context, min, max int, skill string, mater
 	var items models.Items
 	for _, i := range resp.JSON200.Data {
 		a := models.Item{ItemSchema: i}
-		a.RawCode = material
-		a.Skill = skill
+
+		cs, cErr := a.Craft.AsCraftSchema()
+		if cErr != nil {
+			return models.Items{}, fmt.Errorf("failed to get craft schema for: %s, error: %w", i.Code, cErr)
+		}
+
+		var inputs []*models.CraftResource
+
+		a.Skill = string(*cs.Skill)
+		required := *cs.Items
+		for _, ii := range required {
+			inputs = append(inputs, &models.CraftResource{RequiredCode: ii.Code, CostPerResource: ii.Quantity})
+		}
+		a.CraftMaterials = inputs
+
 		items = append(items, a)
 	}
 

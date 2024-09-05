@@ -47,7 +47,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	// get all bank items, determine what's available to refine
-	// but lock here so we don't have contention for items
+	// lock here, so we don't have contention for items
 	l.Debug("waiting for refine lock")
 	r.RefineMutex.Lock()
 	banked, err := r.GetBankItems(ctx)
@@ -82,6 +82,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 
 	// given the resources we have (hydrated bank items), try to determine which of these items
 	// our character is available to refine based upon their level
+	// and put these into a new list
 	var refinable models.Items
 	for _, res := range resources {
 		var refineLevel int
@@ -102,7 +103,10 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 			skillType = string(client.CraftSchemaSkillCooking)
 		}
 
+		// min level current level - 10
 		minLevel := int(math.Max(0, float64(refineLevel-10)))
+
+		// get items that match
 		items, iErr := r.GetItems(ctx, minLevel, refineLevel, skillType, res.Code)
 		if iErr != nil {
 			return iErr
@@ -110,19 +114,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		if len(items) == 0 {
 			continue
 		}
-
-		for _, item := range items {
-			cs, cErr := item.Craft.AsCraftSchema()
-			if cErr != nil {
-				l.Error("failed to get craft schema", "error", cErr)
-			}
-			for _, n := range *cs.Items {
-				item.RawQuantity = n.Quantity
-				item.RawCode = n.Code
-				break
-			}
-			refinable = append(refinable, item)
-		}
+		refinable = append(refinable, items...)
 	}
 
 	if len(refinable) == 0 {
@@ -139,26 +131,33 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	// look over all the refinable items that match that
 	// resource, and then go for the first one.
 	var resourceToRefine = refinable[0]
-	for _, res := range resources {
-		if res.Code == resourceToRefine.RawCode {
-			resourceToRefine.Quantity = res.Quantity
+
+	// bad loop
+	var totalResourceCount int
+	for _, mat := range resourceToRefine.CraftMaterials {
+		totalResourceCount += mat.CostPerResource
+		for _, res := range resources {
+			if mat.RequiredCode == res.Code {
+				mat.Available = res.Quantity
+			}
 		}
 	}
-	l.Info("preparing to refine", "resource", resourceToRefine.Name)
 
-	sets := int(math.Floor(float64(c.InventoryMaxItems) / float64(resourceToRefine.RawQuantity)))
-	qty := sets * resourceToRefine.RawQuantity
-
-	l.Info("withdrawing", "resource", resourceToRefine.RawCode, "quantity", qty)
-	resp, err := r.Withdraw(ctx, character, resourceToRefine.RawCode, qty)
-	if err != nil {
-		return err
+	sets := int(math.Floor(float64(c.InventoryMaxItems) / float64(totalResourceCount)))
+	for _, mat := range resourceToRefine.CraftMaterials {
+		qty := sets * mat.CostPerResource
+		l.Info("withdrawing item", "code", mat.RequiredCode, "qty", qty)
+		resp, wErr := r.Withdraw(ctx, character, mat.RequiredCode, qty)
+		if wErr != nil {
+			return wErr
+		}
+		cooldown := time.Until(resp.CooldownSchema.Expiration)
+		c.CharacterSchema = resp.CharacterResponse.CharacterSchema
+		time.Sleep(cooldown)
 	}
 	r.RefineMutex.Unlock()
 
-	cooldown := time.Until(resp.CooldownSchema.Expiration)
-	c.CharacterSchema = resp.CharacterResponse.CharacterSchema
-	time.Sleep(cooldown)
+	l.Info("preparing to refine", "resource", resourceToRefine.Name, "qty", sets)
 
 	// need to travel to refinement location
 	l.Info("traveling to workshop", "skill", resourceToRefine.Skill)
@@ -171,14 +170,13 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	// need to refine the item
-	l.Info("refining", "resource", resourceToRefine.Code, "quantity", sets)
 	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, sets)
 	if err != nil {
-		return fmt.Errorf("failed to craft %s, %d, code: %w", resourceToRefine.Code, qty, err)
+		return fmt.Errorf("failed to craft %s, %d, code: %w", resourceToRefine.Code, sets, err)
 	}
 	l.Info("skill response", "response", skillresp.SkillInfo)
 
-	cooldown = time.Until(skillresp.Response.CooldownSchema.Expiration)
+	cooldown := time.Until(skillresp.Response.CooldownSchema.Expiration)
 	c.CharacterSchema = skillresp.Response.CharacterResponse.CharacterSchema
 	time.Sleep(cooldown)
 
