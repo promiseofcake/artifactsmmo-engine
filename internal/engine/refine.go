@@ -69,7 +69,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		item.Quantity = b.Quantity
 		// fishing / cooking is the only thing that is 1:1, we need more math
 		if item.Type == "resource" && item.Craft == nil {
-			resources = append(resources, item)
+			resources = append(resources, &item)
 		}
 	}
 
@@ -123,29 +123,50 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 
 	// given the first item in the list (we should sort it)
 	// determine how much we want to withdraw.
-	slices.SortFunc(refinable, func(a, b models.Item) int {
+	slices.SortFunc(refinable, func(a, b *models.Item) int {
 		return cmp.Compare(a.Level, b.Level)
 	})
 
 	// look over all the resources we have in the bank
 	// look over all the refinable items that match that
 	// resource, and then go for the first one.
-	var resourceToRefine = refinable[0]
+	//var resourceToRefine = refinable[0]
 
 	// bad loop
 	var totalResourceCount int
-	for _, mat := range resourceToRefine.CraftMaterials {
-		totalResourceCount += mat.CostPerResource
-		for _, res := range resources {
-			if mat.RequiredCode == res.Code {
-				mat.Available = res.Quantity
+
+	var available models.Items
+	for _, resourceToRefine := range refinable {
+
+		for _, mat := range resourceToRefine.CraftMaterials {
+			totalResourceCount += mat.CostPerResource
+			for _, res := range resources {
+				if mat.RequiredCode == res.Code {
+					mat.Available = res.Quantity
+				}
 			}
+		}
+
+		maxSetsByInventory := int(math.Floor(float64(c.InventoryMaxItems) / float64(totalResourceCount)))
+		setCount := maxSetsByInventory
+
+		for _, mat := range resourceToRefine.CraftMaterials {
+			maxSetsByResource := mat.Available / mat.CostPerResource
+			if maxSetsByResource < setCount {
+				setCount = maxSetsByResource
+			}
+		}
+
+		if setCount > 0 {
+			resourceToRefine.Quantity = setCount
+			available = append(available, resourceToRefine)
 		}
 	}
 
-	sets := int(math.Floor(float64(c.InventoryMaxItems) / float64(totalResourceCount)))
+	resourceToRefine := available[0]
+
 	for _, mat := range resourceToRefine.CraftMaterials {
-		qty := sets * mat.CostPerResource
+		qty := resourceToRefine.Quantity * mat.CostPerResource
 		l.Info("withdrawing item", "code", mat.RequiredCode, "qty", qty)
 		resp, wErr := r.Withdraw(ctx, character, mat.RequiredCode, qty)
 		if wErr != nil {
@@ -157,7 +178,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 	r.RefineMutex.Unlock()
 
-	l.Info("preparing to refine", "resource", resourceToRefine.Name, "qty", sets)
+	l.Info("preparing to refine", "resource", resourceToRefine.Name, "qty", resourceToRefine.Quantity)
 
 	// need to travel to refinement location
 	l.Info("traveling to workshop", "skill", resourceToRefine.Skill)
@@ -170,9 +191,9 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	// need to refine the item
-	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, sets)
+	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, resourceToRefine.Quantity)
 	if err != nil {
-		return fmt.Errorf("failed to craft %s, %d, code: %w", resourceToRefine.Code, sets, err)
+		return fmt.Errorf("failed to craft %s, %d, code: %w", resourceToRefine.Code, resourceToRefine.Quantity, err)
 	}
 	l.Info("skill response", "response", skillresp.SkillInfo)
 

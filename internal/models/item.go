@@ -9,7 +9,7 @@ type BankItem struct {
 	Quantity int    `json:"quantity"`
 }
 
-type Items []Item
+type Items []*Item
 type Item struct {
 	client.ItemSchema
 	Quantity       int `json:"quantity"`

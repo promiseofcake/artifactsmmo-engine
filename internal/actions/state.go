@@ -141,7 +141,7 @@ func (r *Runner) GetItems(ctx context.Context, min, max int, skill string, mater
 		}
 		a.CraftMaterials = inputs
 
-		items = append(items, a)
+		items = append(items, &a)
 	}
 
 	return items, nil
