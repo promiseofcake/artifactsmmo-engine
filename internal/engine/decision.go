@@ -15,18 +15,18 @@ import (
 // ideally this is an event that is run until a stop value is returned
 type Operation func(ctx context.Context, r *actions.Runner, character models.Character) bool
 
-// BuildInventory commands a character to focus on building their inventory
+// Execute commands a character to focus on building their inventory
 // for harvestable items
-func BuildInventory(ctx context.Context, r *actions.Runner, character string, actions []string) error {
+func Execute(ctx context.Context, r *actions.Runner, character string, actions []string, orders models.SimpleItems) error {
 	l := logging.Get(ctx)
 
 	var operations []Operation
 	for _, op := range actions {
 		switch op {
-		case "bank":
-			operations = append(operations, bank)
 		case "gather":
-			operations = append(operations, gather)
+			// fallthrough
+		case "forage":
+			operations = append(operations, forage)
 		case "refine":
 			operations = append(operations, refine)
 		}
@@ -52,7 +52,19 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string, ac
 			l.Debug("operation loop canceled.")
 			return nil
 		default:
-			// TODO this isnt' right
+
+			l.Debug("checking for orders to fulfil", "orders", orders)
+			for _, o := range orders {
+				if ShouldFulfilOrder(ctx, r, o) {
+					l.Debug("order required to be fulfilled", "order", o)
+					oErr := FulfilOrder(ctx, r, character, o)
+					if oErr != nil {
+						l.Error("failed to fulfil order", "order", o, "error", oErr)
+					}
+				}
+			}
+
+			l.Debug("performing designated tasks", "tasks", operations)
 			currentIndex = (currentIndex + 1) % len(operations)
 			for !operations[currentIndex](ctx, r, c) {
 				select {
@@ -68,39 +80,20 @@ func BuildInventory(ctx context.Context, r *actions.Runner, character string, ac
 }
 
 // Operation loops
-func bank(ctx context.Context, r *actions.Runner, character models.Character) bool {
+func forage(ctx context.Context, r *actions.Runner, character models.Character) bool {
 	l := logging.Get(ctx)
 	for {
 		select {
 		case <-ctx.Done():
-			l.Debug("banking context closed")
+			l.Debug("foraging context closed")
 			return true
 		default:
-			l.Debug("banking")
-			err := DepositAll(ctx, r, character.Name)
+			l.Debug("foraging")
+			err := Forage(ctx, r, character.Name)
 			if err != nil {
 				panic(err)
 			}
-			l.Debug("banking done")
-			return true
-		}
-	}
-}
-
-func gather(ctx context.Context, r *actions.Runner, character models.Character) bool {
-	l := logging.Get(ctx)
-	for {
-		select {
-		case <-ctx.Done():
-			l.Debug("gather context closed")
-			return true
-		default:
-			l.Debug("gathering")
-			err := Gather(ctx, r, character.Name)
-			if err != nil {
-				panic(err)
-			}
-			l.Debug("gathering done")
+			l.Debug("foraging done")
 			return true
 		}
 	}

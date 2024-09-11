@@ -40,7 +40,7 @@ func Move(ctx context.Context, r *actions.Runner, character string, coords model
 // Travel facilitates travel to the nearest location for a given type/code
 func Travel(ctx context.Context, r *actions.Runner, character string, location models.Location) error {
 	l := logging.Get(ctx)
-	maps, err := r.GetMaps(ctx, client.GetAllMapsMapsGetParamsContentType(location.Type))
+	maps, err := r.GetMapsByContentType(ctx, client.GetAllMapsMapsGetParamsContentType(location.Type))
 	if err != nil {
 		l.Error("failed to get maps", "error", err)
 		return err

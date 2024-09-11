@@ -2,9 +2,9 @@ package models
 
 import "github.com/promiseofcake/artifactsmmo-go-client/client"
 
-type BankItems []BankItem
+type SimpleItems []SimpleItem
 
-type BankItem struct {
+type SimpleItem struct {
 	Code     string `json:"code"`
 	Quantity int    `json:"quantity"`
 }
