@@ -4,13 +4,14 @@ FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
+COPY cmd/ ./cmd
+COPY internal/ ./internal
+RUN find /app
+
 RUN go build -o artifactsmmo-engine ./cmd/engine
 
 # runtime
 FROM alpine:latest
-
-ARG HOME_DIRECTORY
 
 WORKDIR /app
 COPY --from=builder /app/artifactsmmo-engine .
