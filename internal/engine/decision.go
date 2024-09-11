@@ -55,7 +55,7 @@ func Execute(ctx context.Context, r *actions.Runner, character string, actions [
 
 			l.Debug("checking for orders to fulfil", "orders", orders)
 			for _, o := range orders {
-				if ShouldFulfilOrder(ctx, r, o) {
+				if ShouldFulfilOrder(ctx, r, c, o) {
 					l.Debug("order required to be fulfilled", "order", o)
 					oErr := FulfilOrder(ctx, r, character, o)
 					if oErr != nil {

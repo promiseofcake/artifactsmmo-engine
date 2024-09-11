@@ -11,7 +11,7 @@ import (
 
 // ShouldFulfilOrder determines if this order is still relevant / should be fulfilled
 // it's based upon the quantity on hand in bank, not counting items in flight
-func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, order models.SimpleItem) bool {
+func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Character, order models.SimpleItem) bool {
 	// determine what's in the bank
 	items, err := r.GetBankItems(ctx)
 	if err != nil {
@@ -26,8 +26,16 @@ func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, order models.Simp
 		}
 	}
 
-	if bankItem.Quantity < order.Quantity {
-		logging.Get(ctx).Debug("order quantity is greater than quantity on hand", "resource", order.Code, "required", order.Quantity, "on_hand", bankItem.Quantity)
+	var inventoryItem models.SimpleItem
+	for _, slot := range *c.Inventory {
+		if slot.Code == order.Code {
+			inventoryItem = models.SimpleItem{Code: slot.Code, Quantity: slot.Quantity}
+			break
+		}
+	}
+
+	if (bankItem.Quantity + inventoryItem.Quantity) < order.Quantity {
+		logging.Get(ctx).Debug("order quantity is greater than quantity on hand", "resource", order.Code, "required", order.Quantity, "inventory", inventoryItem.Quantity, "bank", bankItem.Quantity)
 		return true
 	} else {
 		return false
