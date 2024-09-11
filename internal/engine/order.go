@@ -68,11 +68,6 @@ func FulfilOrder(ctx context.Context, r *actions.Runner, character string, order
 	gErr := Gather(ctx, r, character, resources[0])
 	if gErr != nil {
 		return fmt.Errorf("failed to gather resources: %w", gErr)
-	} else {
-		dErr := DepositAll(ctx, r, character)
-		if dErr != nil {
-			return fmt.Errorf("failed to deposit all: %w", dErr)
-		}
 	}
 
 	return nil

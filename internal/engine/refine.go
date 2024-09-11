@@ -133,14 +133,12 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	// look over all the resources we have in the bank
 	// look over all the refinable items that match that
 	// resource, and then go for the first one.
-	//var resourceToRefine = refinable[0]
 
 	// bad loop
 	var totalResourceCount int
-
 	var available models.Items
 	for _, resourceToRefine := range refinable {
-
+		totalResourceCount = 0
 		for _, mat := range resourceToRefine.CraftMaterials {
 			totalResourceCount += mat.CostPerResource
 			for _, res := range resources {
