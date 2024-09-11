@@ -22,31 +22,3 @@ func (r Resource) GetCoords() Coords {
 		Y: r.Location.Coords.Y,
 	}
 }
-
-func resourcePK(resource Resource) string {
-	return "resource|" + resource.Code
-}
-
-func ResourcesToMap(resources Resources) ResourceMap {
-	resourceMap := make(ResourceMap)
-	for _, r := range resources {
-		resourceMap[resourcePK(r)] = &r
-	}
-	return resourceMap
-}
-
-func (r ResourceMap) FindResources(l LocationMap) {
-	for _, v := range r {
-		if loc, ok := l[resourcePK(*v)]; ok {
-			v.Location = loc
-		}
-	}
-}
-
-func (r ResourceMap) ToSlice() Resources {
-	var resources Resources
-	for _, m := range r {
-		resources = append(resources, *m)
-	}
-	return resources
-}

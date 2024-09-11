@@ -1,13 +1,9 @@
 package engine
 
 import (
-	"cmp"
 	"context"
 	"fmt"
-	"slices"
 	"time"
-
-	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
@@ -23,29 +19,12 @@ func Forage(ctx context.Context, r *actions.Runner, character string) error {
 		return err
 	}
 
-	resourceLoations, err := r.GetMapsByContentType(ctx, client.Resource)
-	if err != nil {
-		l.Error("failed to get resource locations", "error", err)
-		return err
-	}
-
 	skill := c.ChooseWeakestSkill()
-	resourceInfo, err := r.GetResourcesBySkill(ctx, skill.Code, skill.MinLevel, skill.CurrentLevel)
+	resources, err := r.GetResourcesBySkill(ctx, skill.Code, skill.MinLevel, skill.CurrentLevel)
 	if err != nil {
 		l.Error("failed to get resources", "error", err)
 		return err
 	}
-
-	loc := models.LocationsToMap(resourceLoations)
-	res := models.ResourcesToMap(resourceInfo)
-	// TODO there are more than one resource available, we should move to the one closet to the bank
-	// implement with manhattan distance
-	res.FindResources(loc)
-
-	resources := res.ToSlice()
-	slices.SortFunc(resources, func(a, b models.Resource) int {
-		return cmp.Compare(b.Level, a.Level)
-	})
 
 	if len(resources) == 0 {
 		err = fmt.Errorf("no suitable resources found")

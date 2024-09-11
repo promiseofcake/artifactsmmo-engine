@@ -1,9 +1,11 @@
 package actions
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
@@ -242,6 +244,7 @@ func (r *Runner) GetResourcesByDrop(ctx context.Context, drop string) (models.Re
 	return resources, nil
 }
 
+// GetResourcesBySkill returns all resources (and location) for resources in a given skill / level range
 func (r *Runner) GetResourcesBySkill(ctx context.Context, skill client.ResourceSchemaSkill, min, max int) (models.Resources, error) {
 	if min < 0 {
 		min = 0
@@ -267,15 +270,24 @@ func (r *Runner) GetResourcesBySkill(ctx context.Context, skill client.ResourceS
 
 	var resources models.Resources
 	for _, res := range resp.JSON200.Data {
+		locations, lErr := r.GetMapsByContentCode(ctx, res.Code)
+		if lErr != nil || len(locations) == 0 {
+			return nil, fmt.Errorf("failed to find resource locations: %w", err)
+		}
+
 		resource := models.Resource{
 			Name:     res.Name,
 			Code:     res.Code,
 			Skill:    res.Skill,
 			Level:    res.Level,
-			Location: models.Location{},
+			Location: locations[0], // todo allow more locations
 		}
 		resources = append(resources, resource)
 	}
+
+	slices.SortFunc(resources, func(a, b models.Resource) int {
+		return cmp.Compare(b.Level, a.Level)
+	})
 
 	return resources, nil
 }
