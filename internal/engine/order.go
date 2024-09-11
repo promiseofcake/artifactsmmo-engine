@@ -26,8 +26,6 @@ func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, order models.Simp
 		}
 	}
 
-	logging.Get(ctx).Debug("")
-
 	if bankItem.Quantity < order.Quantity {
 		logging.Get(ctx).Debug("order quantity is greater than quantity on hand", "resource", order.Code, "required", order.Quantity, "on_hand", bankItem.Quantity)
 		return true
