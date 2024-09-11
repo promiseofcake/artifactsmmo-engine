@@ -21,7 +21,7 @@ func Fight(ctx context.Context, r *actions.Runner, character string) error {
 		return err
 	}
 
-	monsterLocations, err := r.GetMaps(ctx, client.Monster)
+	monsterLocations, err := r.GetMapsByContentType(ctx, client.Monster)
 	if err != nil {
 		l.Error("failed to get monster locations", "error", err)
 		return err

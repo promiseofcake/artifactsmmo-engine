@@ -4,21 +4,16 @@ characters:
   - name: Milnor
     actions:
       - gather
-      - bank
   - name: Bilnor
     actions:
       - gather
-      - bank
   - name: Wilnor
     actions:
       - gather
-      - bank
   - name: Jilnor
     actions:
       - gather
-      - bank
   - name: Vilnor
     actions:
       - gather
-      - bank
       - refine

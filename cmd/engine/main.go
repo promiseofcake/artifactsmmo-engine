@@ -16,6 +16,7 @@ import (
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/engine"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
+	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
 func init() {
@@ -33,9 +34,10 @@ const (
 )
 
 type Config struct {
-	Token      string      `mapstructure:"token"`
-	LogLevel   int         `mapstructure:"log_level"`
-	Characters []Character `mapstructure:"characters"`
+	Token      string             `mapstructure:"token"`
+	LogLevel   int                `mapstructure:"log_level"`
+	Characters []Character        `mapstructure:"characters"`
+	Orders     models.SimpleItems `mapstructure:"orders"`
 }
 
 type Character struct {
@@ -74,7 +76,7 @@ func main() {
 
 		charCtx := logging.ContextWithLogger(ctx, slog.With("character", c.Name))
 		l := logging.Get(charCtx)
-		l.Info("starting BuildInventory engine", "actions", c.Actions)
+		l.Info("starting execute engine", "actions", c.Actions)
 
 		go func(charCtx context.Context) {
 			defer wg.Done()
@@ -82,7 +84,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = engine.BuildInventory(charCtx, r, c.Name, c.Actions)
+			err = engine.Execute(charCtx, r, c.Name, c.Actions, cfg.Orders)
 			if err != nil {
 				log.Fatal(err)
 			}

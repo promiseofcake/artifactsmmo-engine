@@ -1,9 +1,11 @@
 package actions
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
@@ -11,19 +13,19 @@ import (
 )
 
 // GetBankItems returns all items in the bank
-func (r *Runner) GetBankItems(ctx context.Context) (models.BankItems, error) {
+func (r *Runner) GetBankItems(ctx context.Context) (models.SimpleItems, error) {
 	resp, err := r.Client.GetBankItemsMyBankItemsGetWithResponse(ctx, &client.GetBankItemsMyBankItemsGetParams{})
 	if err != nil {
-		return models.BankItems{}, fmt.Errorf("failed to get bank items: %w", err)
+		return models.SimpleItems{}, fmt.Errorf("failed to get bank items: %w", err)
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return models.BankItems{}, fmt.Errorf("failed to get bank items: %s (%d)", resp.Body, resp.StatusCode())
+		return models.SimpleItems{}, fmt.Errorf("failed to get bank items: %s (%d)", resp.Body, resp.StatusCode())
 	}
 
-	var bank models.BankItems
+	var bank models.SimpleItems
 	for _, i := range resp.JSON200.Data {
-		item := models.BankItem{
+		item := models.SimpleItem{
 			Code:     i.Code,
 			Quantity: i.Quantity,
 		}
@@ -55,8 +57,44 @@ func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (mode
 	return models.Character{}, fmt.Errorf("failed to find character: %s", character)
 }
 
-// GetMaps fetches world state based upon a given content type
-func (r *Runner) GetMaps(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (models.Locations, error) {
+// GetMapsByContentCode fetches world state based upon a given content code
+func (r *Runner) GetMapsByContentCode(ctx context.Context, contentCode string) (models.Locations, error) {
+	resp, err := r.Client.GetAllMapsMapsGetWithResponse(ctx, &client.GetAllMapsMapsGetParams{
+		ContentCode: &contentCode,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch maps for content: %s %w", contentCode, err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch maps: %s (%d)", resp.Body, resp.StatusCode())
+	}
+
+	var locs models.Locations
+	for _, l := range resp.JSON200.Data {
+		s, dataErr := l.Content.AsMapContentSchema()
+		if dataErr != nil {
+			return nil, fmt.Errorf("failed to extra map content schema: %w", err)
+		}
+
+		loc := models.Location{
+			Name: l.Name,
+			Skin: l.Skin,
+			Coords: models.Coords{
+				X: l.X,
+				Y: l.Y,
+			},
+			Code: s.Code,
+			Type: s.Type,
+		}
+
+		locs = append(locs, loc)
+	}
+	return locs, nil
+}
+
+// GetMapsByContentType fetches world state based upon a given content type
+func (r *Runner) GetMapsByContentType(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (models.Locations, error) {
 	resp, err := r.Client.GetAllMapsMapsGetWithResponse(ctx, &client.GetAllMapsMapsGetParams{
 		ContentType: &contentType,
 	})
@@ -174,7 +212,40 @@ func (r *Runner) GetMonsters(ctx context.Context, min, max int) (models.Monsters
 	return monsters, nil
 }
 
-func (r *Runner) GetResources(ctx context.Context, skill client.ResourceSchemaSkill, min, max int) (models.Resources, error) {
+func (r *Runner) GetResourcesByDrop(ctx context.Context, drop string) (models.Resources, error) {
+	resp, err := r.Client.GetAllResourcesResourcesGetWithResponse(ctx, &client.GetAllResourcesResourcesGetParams{
+		Drop: &drop,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch resources for drop %s, %w", drop, err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("status failure (%d), message: %s", resp.StatusCode(), resp.Body)
+	}
+
+	var resources models.Resources
+	for _, res := range resp.JSON200.Data {
+
+		locations, lErr := r.GetMapsByContentCode(ctx, res.Code)
+		if lErr != nil || len(locations) == 0 {
+			return nil, fmt.Errorf("failed to find resource locations: %w", err)
+		}
+
+		resource := models.Resource{
+			Name:     res.Name,
+			Code:     res.Code,
+			Skill:    res.Skill,
+			Level:    res.Level,
+			Location: locations[0], // todo allow more locations
+		}
+		resources = append(resources, resource)
+	}
+
+	return resources, nil
+}
+
+// GetResourcesBySkill returns all resources (and location) for resources in a given skill / level range
+func (r *Runner) GetResourcesBySkill(ctx context.Context, skill client.ResourceSchemaSkill, min, max int) (models.Resources, error) {
 	if min < 0 {
 		min = 0
 	}
@@ -199,15 +270,24 @@ func (r *Runner) GetResources(ctx context.Context, skill client.ResourceSchemaSk
 
 	var resources models.Resources
 	for _, res := range resp.JSON200.Data {
+		locations, lErr := r.GetMapsByContentCode(ctx, res.Code)
+		if lErr != nil || len(locations) == 0 {
+			return nil, fmt.Errorf("failed to find resource locations: %w", err)
+		}
+
 		resource := models.Resource{
 			Name:     res.Name,
 			Code:     res.Code,
 			Skill:    res.Skill,
 			Level:    res.Level,
-			Location: models.Location{},
+			Location: locations[0], // todo allow more locations
 		}
 		resources = append(resources, resource)
 	}
+
+	slices.SortFunc(resources, func(a, b models.Resource) int {
+		return cmp.Compare(b.Level, a.Level)
+	})
 
 	return resources, nil
 }
