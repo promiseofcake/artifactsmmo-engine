@@ -14,7 +14,7 @@ import (
 )
 
 // Move physically moves a character if they aren't already there
-func Move(ctx context.Context, r *actions.Runner, character string, coords models.Coords) error {
+func Move(ctx context.Context, r actions.Runner, character string, coords models.Coords) error {
 	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
@@ -38,7 +38,7 @@ func Move(ctx context.Context, r *actions.Runner, character string, coords model
 }
 
 // Travel facilitates travel to the nearest location for a given type/code
-func Travel(ctx context.Context, r *actions.Runner, character string, location models.Location) error {
+func Travel(ctx context.Context, r actions.Runner, character string, location models.Location) error {
 	l := logging.Get(ctx)
 	maps, err := r.GetMapsByContentType(ctx, client.GetAllMapsMapsGetParamsContentType(location.Type))
 	if err != nil {

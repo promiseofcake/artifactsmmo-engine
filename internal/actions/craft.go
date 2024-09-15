@@ -12,7 +12,7 @@ import (
 
 // Craft crafts the given item, with the given quantity and assumes the character is in the correct
 // map position
-func (r *Runner) Craft(ctx context.Context, character string, code string, quantity int) (*SkillResponse, error) {
+func (r *RealRunner) Craft(ctx context.Context, character string, code string, quantity int) (*SkillResponse, error) {
 	req := client.ActionCraftingMyNameActionCraftingPostJSONRequestBody{
 		Code:     code,
 		Quantity: &quantity,

@@ -124,7 +124,7 @@ func bindFlags(flags []string) error {
 	return nil
 }
 
-func blockInitialAction(ctx context.Context, r *actions.Runner, character string) error {
+func blockInitialAction(ctx context.Context, r actions.Runner, character string) error {
 	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {

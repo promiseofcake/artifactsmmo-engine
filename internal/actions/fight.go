@@ -9,7 +9,7 @@ import (
 )
 
 // Fight attacks the mob at the current position for the given character
-func (r *Runner) Fight(ctx context.Context, character string) (*FightResponse, error) {
+func (r *RealRunner) Fight(ctx context.Context, character string) (*FightResponse, error) {
 	resp, err := r.Client.ActionFightMyNameActionFightPostWithResponse(ctx, character)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fight: %w", err)

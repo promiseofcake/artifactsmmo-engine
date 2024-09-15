@@ -13,7 +13,7 @@ import (
 )
 
 // GetBankItems returns all items in the bank
-func (r *Runner) GetBankItems(ctx context.Context) (models.SimpleItems, error) {
+func (r *RealRunner) GetBankItems(ctx context.Context) (models.SimpleItems, error) {
 	resp, err := r.Client.GetBankItemsMyBankItemsGetWithResponse(ctx, &client.GetBankItemsMyBankItemsGetParams{})
 	if err != nil {
 		return models.SimpleItems{}, fmt.Errorf("failed to get bank items: %w", err)
@@ -36,7 +36,7 @@ func (r *Runner) GetBankItems(ctx context.Context) (models.SimpleItems, error) {
 }
 
 // GetMyCharacterInfo returns current info and status about your own specific character
-func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (models.Character, error) {
+func (r *RealRunner) GetMyCharacterInfo(ctx context.Context, character string) (models.Character, error) {
 	resp, err := r.Client.GetMyCharactersMyCharactersGetWithResponse(ctx)
 	if err != nil {
 		return models.Character{}, fmt.Errorf("failed to get character info: %w", err)
@@ -58,7 +58,7 @@ func (r *Runner) GetMyCharacterInfo(ctx context.Context, character string) (mode
 }
 
 // GetMapsByContentCode fetches world state based upon a given content code
-func (r *Runner) GetMapsByContentCode(ctx context.Context, contentCode string) (models.Locations, error) {
+func (r *RealRunner) GetMapsByContentCode(ctx context.Context, contentCode string) (models.Locations, error) {
 	resp, err := r.Client.GetAllMapsMapsGetWithResponse(ctx, &client.GetAllMapsMapsGetParams{
 		ContentCode: &contentCode,
 	})
@@ -94,7 +94,7 @@ func (r *Runner) GetMapsByContentCode(ctx context.Context, contentCode string) (
 }
 
 // GetMapsByContentType fetches world state based upon a given content type
-func (r *Runner) GetMapsByContentType(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (models.Locations, error) {
+func (r *RealRunner) GetMapsByContentType(ctx context.Context, contentType client.GetAllMapsMapsGetParamsContentType) (models.Locations, error) {
 	resp, err := r.Client.GetAllMapsMapsGetWithResponse(ctx, &client.GetAllMapsMapsGetParams{
 		ContentType: &contentType,
 	})
@@ -130,7 +130,7 @@ func (r *Runner) GetMapsByContentType(ctx context.Context, contentType client.Ge
 }
 
 // GetItem returns information about an item
-func (r *Runner) GetItem(ctx context.Context, code string) (models.Item, error) {
+func (r *RealRunner) GetItem(ctx context.Context, code string) (models.Item, error) {
 	resp, err := r.Client.GetItemItemsCodeGetWithResponse(ctx, code)
 	if err != nil {
 		return models.Item{}, fmt.Errorf("failed to get item with code: %s %w", code, err)
@@ -144,7 +144,7 @@ func (r *Runner) GetItem(ctx context.Context, code string) (models.Item, error) 
 }
 
 // GetItems searches for an item
-func (r *Runner) GetItems(ctx context.Context, min, max int, skill string, material string) (models.Items, error) {
+func (r *RealRunner) GetItems(ctx context.Context, min, max int, skill string, material string) (models.Items, error) {
 	s := client.GetAllItemsItemsGetParamsCraftSkill(skill)
 
 	resp, err := r.Client.GetAllItemsItemsGetWithResponse(ctx, &client.GetAllItemsItemsGetParams{
@@ -186,7 +186,7 @@ func (r *Runner) GetItems(ctx context.Context, min, max int, skill string, mater
 }
 
 // GetMonsters fetches monster world state based upon a given content type
-func (r *Runner) GetMonsters(ctx context.Context, min, max int) (models.Monsters, error) {
+func (r *RealRunner) GetMonsters(ctx context.Context, min, max int) (models.Monsters, error) {
 	resp, err := r.Client.GetAllMonstersMonstersGetWithResponse(ctx, &client.GetAllMonstersMonstersGetParams{
 		MinLevel: &min,
 		MaxLevel: &max,
@@ -212,7 +212,7 @@ func (r *Runner) GetMonsters(ctx context.Context, min, max int) (models.Monsters
 	return monsters, nil
 }
 
-func (r *Runner) GetResourcesByDrop(ctx context.Context, drop string) (models.Resources, error) {
+func (r *RealRunner) GetResourcesByDrop(ctx context.Context, drop string) (models.Resources, error) {
 	resp, err := r.Client.GetAllResourcesResourcesGetWithResponse(ctx, &client.GetAllResourcesResourcesGetParams{
 		Drop: &drop,
 	})
@@ -245,7 +245,7 @@ func (r *Runner) GetResourcesByDrop(ctx context.Context, drop string) (models.Re
 }
 
 // GetResourcesBySkill returns all resources (and location) for resources in a given skill / level range
-func (r *Runner) GetResourcesBySkill(ctx context.Context, skill client.ResourceSchemaSkill, min, max int) (models.Resources, error) {
+func (r *RealRunner) GetResourcesBySkill(ctx context.Context, skill client.ResourceSchemaSkill, min, max int) (models.Resources, error) {
 	if min < 0 {
 		min = 0
 	}

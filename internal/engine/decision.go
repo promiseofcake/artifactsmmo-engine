@@ -13,11 +13,11 @@ import (
 
 // Operation is a type of event we want a character to do
 // ideally this is an event that is run until a stop value is returned
-type Operation func(ctx context.Context, r *actions.Runner, character models.Character) bool
+type Operation func(ctx context.Context, r actions.Runner, character models.Character) bool
 
 // Execute commands a character to focus on building their inventory
 // for harvestable items
-func Execute(ctx context.Context, r *actions.Runner, character string, actions []string, orders models.SimpleItems) error {
+func Execute(ctx context.Context, r actions.Runner, character string, actions []string, orders models.SimpleItems) error {
 	l := logging.Get(ctx)
 
 	var operations []Operation
@@ -80,7 +80,7 @@ func Execute(ctx context.Context, r *actions.Runner, character string, actions [
 }
 
 // Operation loops
-func forage(ctx context.Context, r *actions.Runner, character models.Character) bool {
+func forage(ctx context.Context, r actions.Runner, character models.Character) bool {
 	l := logging.Get(ctx)
 	for {
 		select {
@@ -99,7 +99,7 @@ func forage(ctx context.Context, r *actions.Runner, character models.Character) 
 	}
 }
 
-func refine(ctx context.Context, r *actions.Runner, character models.Character) bool {
+func refine(ctx context.Context, r actions.Runner, character models.Character) bool {
 	l := logging.Get(ctx)
 	for {
 		select {

@@ -11,7 +11,7 @@ import (
 )
 
 // Deposit deposits an item and quantity into the bank
-func (r *Runner) Deposit(ctx context.Context, character string, code string, qty int) (*BankResponse, error) {
+func (r *RealRunner) Deposit(ctx context.Context, character string, code string, qty int) (*BankResponse, error) {
 	resp, err := r.Client.ActionDepositBankMyNameActionBankDepositPostWithResponse(
 		ctx,
 		character,
@@ -38,7 +38,7 @@ func (r *Runner) Deposit(ctx context.Context, character string, code string, qty
 }
 
 // Withdraw withdraws an item from the bank with the given quantity
-func (r *Runner) Withdraw(ctx context.Context, character string, code string, qty int) (*BankResponse, error) {
+func (r *RealRunner) Withdraw(ctx context.Context, character string, code string, qty int) (*BankResponse, error) {
 	r.BankMutex.Lock()
 	defer r.BankMutex.Unlock()
 	resp, err := r.Client.ActionWithdrawBankMyNameActionBankWithdrawPostWithResponse(ctx, character, client.ActionWithdrawBankMyNameActionBankWithdrawPostJSONRequestBody{

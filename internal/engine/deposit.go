@@ -13,7 +13,7 @@ import (
 
 // DepositAll is an engine operation which commands a character
 // to visit a bank and deposit all of their inventory
-func DepositAll(ctx context.Context, r *actions.Runner, character string) error {
+func DepositAll(ctx context.Context, r actions.Runner, character string) error {
 	l := logging.Get(ctx)
 	err := Travel(ctx, r, character, models.Location{
 		Type: string(client.Bank),

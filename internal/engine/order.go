@@ -11,7 +11,7 @@ import (
 
 // ShouldFulfilOrder determines if this order is still relevant / should be fulfilled
 // it's based upon the quantity on hand in bank, not counting items in flight
-func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Character, order models.SimpleItem) bool {
+func ShouldFulfilOrder(ctx context.Context, r actions.Runner, c models.Character, order models.SimpleItem) bool {
 	// determine what's in the bank
 	items, err := r.GetBankItems(ctx)
 	if err != nil {
@@ -44,7 +44,7 @@ func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Characte
 }
 
 // FulfilOrder will instruct the character to seek out and gather the required resource
-func FulfilOrder(ctx context.Context, r *actions.Runner, character string, order models.SimpleItem) error {
+func FulfilOrder(ctx context.Context, r actions.Runner, character string, order models.SimpleItem) error {
 	// determine all resources that drop the order
 	resources, err := r.GetResourcesByDrop(ctx, order.Code)
 	if err != nil {

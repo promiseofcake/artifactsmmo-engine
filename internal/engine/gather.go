@@ -11,7 +11,7 @@ import (
 )
 
 // Forage will attempt to Forage resources until the character should bank
-func Forage(ctx context.Context, r *actions.Runner, character string) error {
+func Forage(ctx context.Context, r actions.Runner, character string) error {
 	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
@@ -46,7 +46,7 @@ func Forage(ctx context.Context, r *actions.Runner, character string) error {
 }
 
 // Gather will move to, and gather loop a resource
-func Gather(ctx context.Context, r *actions.Runner, character string, resource models.Resource) error {
+func Gather(ctx context.Context, r actions.Runner, character string, resource models.Resource) error {
 	l := logging.Get(ctx)
 
 	c, err := r.GetMyCharacterInfo(ctx, character)

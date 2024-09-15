@@ -13,7 +13,7 @@ import (
 )
 
 // Fight will attempt to find and fight appropriate monsters
-func Fight(ctx context.Context, r *actions.Runner, character string) error {
+func Fight(ctx context.Context, r actions.Runner, character string) error {
 	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {

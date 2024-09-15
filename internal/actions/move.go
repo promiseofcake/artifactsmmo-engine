@@ -11,7 +11,7 @@ import (
 )
 
 // Move changes the x, y position the given character
-func (r *Runner) Move(ctx context.Context, character string, x, y int) (*Response, error) {
+func (r *RealRunner) Move(ctx context.Context, character string, x, y int) (*Response, error) {
 	resp, err := r.Client.ActionMoveMyNameActionMovePostWithResponse(ctx, character, client.ActionMoveMyNameActionMovePostJSONRequestBody{
 		X: x,
 		Y: y,

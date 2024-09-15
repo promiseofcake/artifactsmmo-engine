@@ -9,7 +9,7 @@ import (
 )
 
 // Gather performs resource gathering at the current position for the given character
-func (r *Runner) Gather(ctx context.Context, character string) (*SkillResponse, error) {
+func (r *RealRunner) Gather(ctx context.Context, character string) (*SkillResponse, error) {
 	resp, err := r.Client.ActionGatheringMyNameActionGatheringPostWithResponse(ctx, character)
 	if err != nil {
 		return nil, fmt.Errorf("failed to gather: %w", err)

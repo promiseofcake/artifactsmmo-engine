@@ -18,18 +18,18 @@ import (
 
 var NoItemsToRefine = errors.New("no items to refine")
 
-func Refine(ctx context.Context, r *actions.Runner, character string) error {
+func Refine(ctx context.Context, r actions.Runner, character string) error {
 	var err error
 	// assign character
 	l := logging.Get(ctx)
 
-	defer func() {
-		// Note that while correct uses of TryLock do exist, they are rare,
-		// and use of TryLock is often a sign of a deeper problem
-		// in a particular use of mutexes.
-		r.RefineMutex.TryLock()
-		r.RefineMutex.Unlock()
-	}()
+	//defer func() {
+	//	// Note that while correct uses of TryLock do exist, they are rare,
+	//	// and use of TryLock is often a sign of a deeper problem
+	//	// in a particular use of mutexes.
+	//	r.RefineMutex.TryLock()
+	//	r.RefineMutex.Unlock()
+	//}()
 
 	// start by traveling to the bank to reduce the mutex lock time
 	err = Travel(ctx, r, character, models.Location{
@@ -49,7 +49,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	// get all bank items, determine what's available to refine
 	// lock here, so we don't have contention for items
 	l.Debug("waiting for refine lock")
-	r.RefineMutex.Lock()
+	//r.RefineMutex.Lock()
 	banked, err := r.GetBankItems(ctx)
 	if err != nil {
 		l.Error("failed to get bank items", "character", character, "error", err)
@@ -177,7 +177,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		c.CharacterSchema = resp.CharacterResponse.CharacterSchema
 		time.Sleep(cooldown)
 	}
-	r.RefineMutex.Unlock()
+	//r.RefineMutex.Unlock()
 
 	l.Info("preparing to refine", "resource", resourceToRefine.Name, "qty", resourceToRefine.Quantity)
 
@@ -211,7 +211,7 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	return nil
 }
 
-func RefineAll(ctx context.Context, r *actions.Runner, character string) error {
+func RefineAll(ctx context.Context, r *actions.RealRunner, character string) error {
 	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {

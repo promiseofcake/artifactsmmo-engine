@@ -11,8 +11,8 @@ import (
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 )
 
-// Runner is an executor for various Actions (Character / State)
-type Runner struct {
+// RealRunner is an executor for various Actions (Character / State)
+type RealRunner struct {
 	Client      *client.ClientWithResponses
 	BankMutex   sync.Mutex
 	RefineMutex sync.Mutex
@@ -42,7 +42,7 @@ func (h *retryLogger) Warn(msg string, keysAndValues ...interface{}) {
 }
 
 // NewDefaultRunner returns a new Actions command runner with a default client
-func NewDefaultRunner(token string) (*Runner, error) {
+func NewDefaultRunner(token string) (*RealRunner, error) {
 	rClient := retryablehttp.NewClient()
 	rClient.Logger = newRetryLogger()
 
@@ -68,14 +68,14 @@ func NewDefaultRunner(token string) (*Runner, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to init new client: %w", err)
 	}
-	return &Runner{
+	return &RealRunner{
 		Client: c,
 	}, nil
 }
 
 // NewRunnerWithClient returns a new Actions command runner with a pre-configured client
-func NewRunnerWithClient(client *client.ClientWithResponses) *Runner {
-	return &Runner{
+func NewRunnerWithClient(client *client.ClientWithResponses) *RealRunner {
+	return &RealRunner{
 		Client: client,
 	}
 }
