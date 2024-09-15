@@ -211,7 +211,7 @@ func Refine(ctx context.Context, r actions.Runner, character string) error {
 	return nil
 }
 
-func RefineAll(ctx context.Context, r *actions.RealRunner, character string) error {
+func RefineAll(ctx context.Context, r actions.Runner, character string) error {
 	l := logging.Get(ctx)
 	c, err := r.GetMyCharacterInfo(ctx, character)
 	if err != nil {
