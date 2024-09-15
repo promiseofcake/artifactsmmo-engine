@@ -9,6 +9,7 @@ import (
 
 	"github.com/promiseofcake/artifactsmmo-go-client/client"
 
+	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/models"
 )
 
@@ -271,8 +272,12 @@ func (r *Runner) GetResourcesBySkill(ctx context.Context, skill client.ResourceS
 	var resources models.Resources
 	for _, res := range resp.JSON200.Data {
 		locations, lErr := r.GetMapsByContentCode(ctx, res.Code)
-		if lErr != nil || len(locations) == 0 {
+		if lErr != nil {
 			return nil, fmt.Errorf("failed to find resource locations: %w", err)
+		}
+		if len(locations) == 0 {
+			logging.Get(ctx).Info("skipping resource locations: no locations found", "resource", res)
+			continue
 		}
 
 		resource := models.Resource{
