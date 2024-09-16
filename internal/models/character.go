@@ -38,17 +38,17 @@ func (c Character) ChooseWeakestSkill() CharacterSkill {
 		{
 			Code:         client.ResourceSchemaSkillWoodcutting,
 			CurrentLevel: c.WoodcuttingLevel,
-			MinLevel:     math.Max(0, c.WoodcuttingLevel-10),
+			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.WoodcuttingLevel-10)}[c.WoodcuttingLevel == 35],
 		},
 		{
 			Code:         client.ResourceSchemaSkillMining,
 			CurrentLevel: c.MiningLevel,
-			MinLevel:     math.Max(0, c.MiningLevel-10),
+			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.MiningLevel-10)}[c.MiningLevel == 35],
 		},
 		{
 			Code:         client.ResourceSchemaSkillFishing,
 			CurrentLevel: c.FishingLevel,
-			MinLevel:     math.Max(0, c.FishingLevel-10),
+			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.FishingLevel-10)}[c.FishingLevel == 35],
 		},
 	}
 
