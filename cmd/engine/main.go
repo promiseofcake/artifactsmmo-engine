@@ -67,8 +67,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	ctx := context.Background()
+
+	orders := make(chan models.Order, 10)
+	for _, o := range cfg.Orders {
+		for n := 0; n < o.Concurrency; n++ {
+			slog.Debug("adding order to queue", "order", o)
+			orders <- o
+		}
+	}
 
 	wg := &sync.WaitGroup{}
 	for _, c := range cfg.Characters {
@@ -84,7 +91,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = engine.Execute(charCtx, r, c.Name, c.Actions, cfg.Orders)
+			err = engine.Execute(charCtx, r, c.Name, c.Actions, orders)
 			if err != nil {
 				log.Fatal(err)
 			}

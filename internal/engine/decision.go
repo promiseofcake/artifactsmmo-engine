@@ -17,7 +17,7 @@ type Operation func(ctx context.Context, r *actions.Runner, character models.Cha
 
 // Execute commands a character to focus on building their inventory
 // for harvestable items
-func Execute(ctx context.Context, r *actions.Runner, character string, actions []string, orders []models.Order) error {
+func Execute(ctx context.Context, r *actions.Runner, character string, actions []string, orders chan models.Order) error {
 	l := logging.Get(ctx)
 
 	var operations []Operation
@@ -51,19 +51,21 @@ func Execute(ctx context.Context, r *actions.Runner, character string, actions [
 		case <-ctx.Done():
 			l.Debug("operation loop canceled.")
 			return nil
-		default:
-
-			l.Debug("checking for orders to fulfil", "orders", orders)
-			for _, o := range orders {
+		case o := <-orders:
+			l.Debug("attempting to fulfil order", "order", o)
+			if ShouldFulfilOrder(ctx, r, c, o) {
+				oErr := FulfilOrder(ctx, r, character, o)
+				if oErr != nil {
+					l.Error("failed to fulfil order", "order", o, "error", oErr)
+					orders <- o
+					break
+				}
 				if ShouldFulfilOrder(ctx, r, c, o) {
-					l.Debug("order required to be fulfilled", "order", o)
-					oErr := FulfilOrder(ctx, r, character, o)
-					if oErr != nil {
-						l.Error("failed to fulfil order", "order", o, "error", oErr)
-					}
+					l.Debug("order incomplete, requeueing", "order", o)
+					orders <- o
 				}
 			}
-
+		default:
 			l.Debug("performing designated tasks", "tasks", operations)
 			currentIndex = (currentIndex + 1) % len(operations)
 			for !operations[currentIndex](ctx, r, c) {
