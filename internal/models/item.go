@@ -22,3 +22,8 @@ type CraftResource struct {
 	CostPerResource int
 	Available       int
 }
+
+type Order struct {
+	Item        SimpleItem `json:"item"`
+	Concurrency int        `json:"concurrency"`
+}

@@ -11,7 +11,7 @@ import (
 
 // ShouldFulfilOrder determines if this order is still relevant / should be fulfilled
 // it's based upon the quantity on hand in bank, not counting items in flight
-func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Character, order models.SimpleItem) bool {
+func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Character, order models.Order) bool {
 	// determine what's in the bank
 	items, err := r.GetBankItems(ctx)
 	if err != nil {
@@ -20,7 +20,7 @@ func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Characte
 
 	var bankItem models.SimpleItem
 	for _, item := range items {
-		if item.Code == order.Code {
+		if item.Code == order.Item.Code {
 			bankItem = item
 			break
 		}
@@ -28,14 +28,14 @@ func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Characte
 
 	var inventoryItem models.SimpleItem
 	for _, slot := range *c.Inventory {
-		if slot.Code == order.Code {
+		if slot.Code == order.Item.Code {
 			inventoryItem = models.SimpleItem{Code: slot.Code, Quantity: slot.Quantity}
 			break
 		}
 	}
 
-	if (bankItem.Quantity + inventoryItem.Quantity) < order.Quantity {
-		logging.Get(ctx).Debug("order quantity is greater than quantity on hand", "resource", order.Code, "required", order.Quantity, "inventory", inventoryItem.Quantity, "bank", bankItem.Quantity)
+	if (bankItem.Quantity + inventoryItem.Quantity) < order.Item.Quantity {
+		logging.Get(ctx).Debug("order quantity is greater than quantity on hand", "resource", order.Item.Code, "required", order.Item.Quantity, "inventory", inventoryItem.Quantity, "bank", bankItem.Quantity)
 		return true
 	} else {
 		return false
@@ -44,9 +44,9 @@ func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Characte
 }
 
 // FulfilOrder will instruct the character to seek out and gather the required resource
-func FulfilOrder(ctx context.Context, r *actions.Runner, character string, order models.SimpleItem) error {
+func FulfilOrder(ctx context.Context, r *actions.Runner, character string, order models.Order) error {
 	// determine all resources that drop the order
-	resources, err := r.GetResourcesByDrop(ctx, order.Code)
+	resources, err := r.GetResourcesByDrop(ctx, order.Item.Code)
 	if err != nil {
 		return fmt.Errorf("get resources by drop: %w", err)
 	}

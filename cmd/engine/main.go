@@ -34,10 +34,10 @@ const (
 )
 
 type Config struct {
-	Token      string             `mapstructure:"token"`
-	LogLevel   int                `mapstructure:"log_level"`
-	Characters []Character        `mapstructure:"characters"`
-	Orders     models.SimpleItems `mapstructure:"orders"`
+	Token      string         `mapstructure:"token"`
+	LogLevel   int            `mapstructure:"log_level"`
+	Characters []Character    `mapstructure:"characters"`
+	Orders     []models.Order `mapstructure:"orders"`
 }
 
 type Character struct {

@@ -17,7 +17,7 @@ type Operation func(ctx context.Context, r *actions.Runner, character models.Cha
 
 // Execute commands a character to focus on building their inventory
 // for harvestable items
-func Execute(ctx context.Context, r *actions.Runner, character string, actions []string, orders models.SimpleItems) error {
+func Execute(ctx context.Context, r *actions.Runner, character string, actions []string, orders []models.Order) error {
 	l := logging.Get(ctx)
 
 	var operations []Operation
