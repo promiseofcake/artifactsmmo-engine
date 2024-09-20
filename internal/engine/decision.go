@@ -54,14 +54,21 @@ func Execute(ctx context.Context, r *actions.Runner, character string, actions [
 		case o := <-orders:
 			l.Debug("attempting to fulfil order", "order", o)
 			if ShouldFulfilOrder(ctx, r, c, o) {
-				oErr := FulfilOrder(ctx, r, character, o)
+				reqs, oErr := FulfilOrder(ctx, r, character, o)
+				if len(reqs) > 0 {
+					for _, req := range reqs {
+						orders <- req
+					}
+				}
+
 				if oErr != nil {
 					l.Error("failed to fulfil order", "order", o, "error", oErr)
 					orders <- o
 					break
 				}
+
 				if ShouldFulfilOrder(ctx, r, c, o) {
-					l.Debug("order incomplete, requeueing", "order", o)
+					l.Debug("order incomplete, re-queueing", "order", o)
 					orders <- o
 				}
 			}
