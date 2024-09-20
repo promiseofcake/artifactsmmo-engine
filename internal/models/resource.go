@@ -15,7 +15,7 @@ type Resource struct {
 	Location Location                   `json:"location"`
 }
 
-// GetCoords returns a Monster's coords
+// GetCoords returns a Resources's coords
 func (r Resource) GetCoords() Coords {
 	return Coords{
 		X: r.Location.Coords.X,
