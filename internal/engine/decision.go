@@ -70,6 +70,8 @@ func Execute(ctx context.Context, r *actions.Runner, character string, actions [
 				if ShouldFulfilOrder(ctx, r, c, o) {
 					l.Debug("order incomplete, re-queueing", "order", o)
 					orders <- o
+				} else {
+					l.Debug("order complete!", "order", o)
 				}
 			}
 		default:

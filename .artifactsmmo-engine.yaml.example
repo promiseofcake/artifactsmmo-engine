@@ -1,19 +1,48 @@
 token: foo-bar
-log_level: 0
+log_level: -4
+orders:
+  - item:
+      code: copper_dagger
+      quantity: 50
+    concurrency: 5
+  - item:
+      code: wooden_staff
+      quantity: 50
+    concurrency: 5
+  - item:
+      code: copper_helmet
+      quantity: 50
+    concurrency: 5
+  - item:
+      code: copper_boots
+      quantity: 50
+    concurrency: 5
+  - item:
+      code: copper_ring
+      quantity: 50
+    concurrency: 5
+  - item:
+      code: wooden_shield
+      quantity: 50
+    concurrency: 5
 characters:
   - name: Milnor
     actions:
-      - gather
+      - forage
+      - refine
   - name: Bilnor
     actions:
-      - gather
+      - forage
+      - refine
   - name: Wilnor
     actions:
-      - gather
+      - forage
+      - refine
   - name: Jilnor
     actions:
-      - gather
+      - forage
+      - refine
   - name: Vilnor
     actions:
-      - gather
+      - forage
       - refine

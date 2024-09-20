@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/promiseofcake/artifactsmmo-engine/internal/actions"
 	"github.com/promiseofcake/artifactsmmo-engine/internal/logging"
@@ -13,6 +14,12 @@ import (
 // ShouldFulfilOrder determines if this order is still relevant / should be fulfilled
 // it's based upon the quantity on hand in bank, not counting items in flight
 func ShouldFulfilOrder(ctx context.Context, r *actions.Runner, c models.Character, order models.Order) bool {
+	// refresh char data
+	c, err := r.GetMyCharacterInfo(ctx, c.Name)
+	if err != nil {
+		return false
+	}
+
 	// determine what's in the bank
 	items, err := r.GetBankItems(ctx)
 	if err != nil {
@@ -88,11 +95,12 @@ func FulfilOrder(ctx context.Context, r *actions.Runner, character string, order
 		if err != nil {
 			return nil, fmt.Errorf("get item craft schema: %w", err)
 		}
+		item.Skill = string(*cs.Skill)
+
 		// items
-
-		var reqs []models.Order
+		var newOrders []models.Order
+		var materials []models.Order
 		for _, input := range *cs.Items {
-
 			io := models.Order{
 				Item: models.SimpleItem{
 					Code:     input.Code,
@@ -104,21 +112,69 @@ func FulfilOrder(ctx context.Context, r *actions.Runner, character string, order
 
 			if ShouldFulfilOrder(ctx, r, c, io) {
 				l.Debug("missing required item for crafting", "order", io)
-				reqs = append(reqs, io)
+				newOrders = append(newOrders, io)
+			} else {
+				materials = append(materials, io)
 			}
 		}
 
-		if len(reqs) > 0 {
-			return reqs, errors.New("requirements not met")
+		if len(newOrders) > 0 {
+			return newOrders, errors.New("requirements not met")
 		}
 
 		l.Debug("all items present for crafting!")
 
-		// go to bank
-		// withdraw items
-		// craft items
+		// check inventory
 
-		return nil, errors.New("failed to implemnet crafting")
+		// go to bank
+
+		tErr := Travel(ctx, r, character, models.Location{
+			Code: "bank",
+			Type: "bank",
+		})
+		if tErr != nil {
+			return nil, tErr
+		}
+
+		// deposit all
+		dErr := DepositAll(ctx, r, character)
+		if dErr != nil {
+			return nil, fmt.Errorf("failed to deposit all: %w", dErr)
+		}
+
+		// withdraw items
+		for _, mat := range materials {
+			l.Info("withdrawing item", "code", mat.Item.Code, "qty", mat.Item.Quantity)
+			resp, wErr := r.Withdraw(ctx, character, mat.Item.Code, mat.Item.Quantity)
+			if wErr != nil {
+				return nil, wErr
+			}
+			cooldown := time.Until(resp.CooldownSchema.Expiration)
+			c.CharacterSchema = resp.CharacterResponse.CharacterSchema
+			time.Sleep(cooldown)
+		}
+
+		// craft items
+		l.Info("traveling to workshop", "skill", item.Skill)
+		err = Travel(ctx, r, character, models.Location{
+			Code: item.Skill,
+			Type: "workshop",
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		skillresp, err := r.Craft(ctx, character, order.Item.Code, order.Item.Quantity)
+		if err != nil {
+			return nil, fmt.Errorf("failed to craft %s, %d, code: %w", order.Item.Code, order.Item.Quantity, err)
+		}
+		l.Info("skill response", "response", skillresp.SkillInfo)
+
+		cooldown := time.Until(skillresp.Response.CooldownSchema.Expiration)
+		c.CharacterSchema = skillresp.Response.CharacterResponse.CharacterSchema
+		time.Sleep(cooldown)
+
+		return nil, nil
 	}
 
 	return nil, nil

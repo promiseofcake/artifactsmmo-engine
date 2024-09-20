@@ -52,6 +52,11 @@ func (c Character) ChooseWeakestSkill() CharacterSkill {
 		},
 	}
 
+	// if maxed out, do mining
+	if c.FishingLevel == 35 && c.MiningLevel == 35 && c.WoodcuttingLevel == 35 {
+		return skills[1]
+	}
+
 	slices.SortFunc(skills, func(a, b CharacterSkill) int {
 		return cmp.Compare(a.CurrentLevel, b.CurrentLevel)
 	})

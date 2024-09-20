@@ -69,7 +69,7 @@ func main() {
 	}
 	ctx := context.Background()
 
-	orders := make(chan models.Order, 10)
+	orders := make(chan models.Order, 100)
 	for _, o := range cfg.Orders {
 		for n := 0; n < o.Concurrency; n++ {
 			slog.Debug("adding order to queue", "order", o)
