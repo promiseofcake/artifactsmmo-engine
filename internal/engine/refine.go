@@ -165,7 +165,14 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	}
 
 	resourceToRefine := available[0]
-
+	l.Info("traveling to workshop", "skill", resourceToRefine.Skill)
+	err = Travel(ctx, r, character, models.Location{
+		Code: resourceToRefine.Skill,
+		Type: "workshop",
+	})
+	if err != nil {
+		return err
+	}
 	for _, mat := range resourceToRefine.CraftMaterials {
 		qty := resourceToRefine.Quantity * mat.CostPerResource
 		l.Info("withdrawing item", "code", mat.RequiredCode, "qty", qty)
@@ -182,14 +189,6 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 	l.Info("preparing to refine", "resource", resourceToRefine.Name, "qty", resourceToRefine.Quantity)
 
 	// need to travel to refinement location
-	l.Info("traveling to workshop", "skill", resourceToRefine.Skill)
-	err = Travel(ctx, r, character, models.Location{
-		Code: resourceToRefine.Skill,
-		Type: "workshop",
-	})
-	if err != nil {
-		return err
-	}
 
 	// need to refine the item
 	skillresp, err := r.Craft(ctx, character, resourceToRefine.Code, resourceToRefine.Quantity)
