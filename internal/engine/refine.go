@@ -92,13 +92,13 @@ func Refine(ctx context.Context, r *actions.Runner, character string) error {
 		// skill level, and fetch all items one could make
 		// with the current given skill level
 		switch res.Subtype {
-		case string(client.Woodcutting):
+		case string(client.ResourceSchemaSkillWoodcutting):
 			refineLevel = c.WoodcuttingLevel
 			skillType = string(client.CraftSchemaSkillWoodcutting)
-		case string(client.Mining):
+		case string(client.ResourceSchemaSkillMining):
 			refineLevel = c.MiningLevel
 			skillType = string(client.CraftSchemaSkillMining)
-		case string(client.Fishing):
+		case string(client.ResourceSchemaSkillFishing):
 			refineLevel = c.CookingLevel
 			skillType = string(client.CraftSchemaSkillCooking)
 		}
