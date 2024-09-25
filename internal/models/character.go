@@ -11,6 +11,8 @@ import (
 	"github.com/promiseofcake/artifactsmmo-engine/internal/math"
 )
 
+const maxLevel = 40
+
 // Character is our representation of the Player's character
 // Ideally we can update this state with the value of a response
 // from a request.
@@ -38,22 +40,22 @@ func (c Character) ChooseWeakestSkill() CharacterSkill {
 		{
 			Code:         client.ResourceSchemaSkillWoodcutting,
 			CurrentLevel: c.WoodcuttingLevel,
-			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.WoodcuttingLevel-10)}[c.WoodcuttingLevel == 35],
+			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.WoodcuttingLevel-10)}[c.WoodcuttingLevel == maxLevel],
 		},
 		{
 			Code:         client.ResourceSchemaSkillMining,
 			CurrentLevel: c.MiningLevel,
-			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.MiningLevel-10)}[c.MiningLevel == 35],
+			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.MiningLevel-10)}[c.MiningLevel == maxLevel],
 		},
 		{
 			Code:         client.ResourceSchemaSkillFishing,
 			CurrentLevel: c.FishingLevel,
-			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.FishingLevel-10)}[c.FishingLevel == 35],
+			MinLevel:     map[bool]int{true: 20, false: math.Max(0, c.FishingLevel-10)}[c.FishingLevel == maxLevel],
 		},
 	}
 
 	// if maxed out, do mining
-	if c.FishingLevel == 35 && c.MiningLevel == 35 && c.WoodcuttingLevel == 35 {
+	if c.FishingLevel == maxLevel && c.MiningLevel == maxLevel && c.WoodcuttingLevel == maxLevel {
 		return skills[1]
 	}
 
